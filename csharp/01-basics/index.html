@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C# საფუძვლები — შემაჯამებელი გამოცდა</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1d23;
+    --muted: #5d6573;
+    --faint: #8a919e;
+    --bg: #eceef2;
+    --paper: #ffffff;
+    --line: #dde1e7;
+    --accent: #3346c4;
+    --accent-soft: #eef0fc;
+    --warn: #b42318;
+    --code-bg: #f6f8fa;
+    --sans: "Noto Sans Georgian", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.55;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  input, textarea { -webkit-user-select: text; user-select: text; }
+
+  /* ---------- toolbar ---------- */
+  .toolbar {
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(255,255,255,.94);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line);
+  }
+  .toolbar-inner {
+    max-width: 880px; margin: 0 auto; padding: 10px 24px;
+    display: flex; align-items: center; gap: 20px;
+  }
+  .tb-item { display: flex; flex-direction: column; line-height: 1.2; }
+  .tb-label { font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; }
+  .tb-value { font-family: var(--mono); font-weight: 600; font-size: 17px; }
+  .tb-value.over { color: var(--warn); }
+  .tb-spacer { flex: 1; }
+  .tb-back { font-size: 20px; color: var(--muted); text-decoration: none; padding: 2px 6px; border-radius: 6px; }
+  .tb-back:hover { color: var(--ink); background: var(--bg); }
+  .btn {
+    font-family: var(--sans); font-size: 14px; font-weight: 600;
+    border: 0; border-radius: 8px; padding: 10px 18px; cursor: pointer;
+    background: var(--accent); color: #fff;
+  }
+  .btn:hover { filter: brightness(1.08); }
+
+  /* ---------- paper ---------- */
+  .paper {
+    max-width: 880px; margin: 28px auto 60px; background: var(--paper);
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 48px 56px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.04);
+  }
+  .exam-head { border-bottom: 2px solid var(--ink); padding-bottom: 20px; margin-bottom: 24px; }
+  .eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  h1 { font-size: 28px; margin: 6px 0 4px; line-height: 1.25; }
+  .exam-meta { color: var(--muted); font-size: 14px; display: flex; gap: 18px; flex-wrap: wrap; }
+
+  .student {
+    display: grid; grid-template-columns: 1fr 1fr 160px; gap: 14px;
+    margin: 22px 0 6px;
+  }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+  .field input {
+    width: 100%; font-family: var(--sans); font-size: 15px;
+    border: 0; border-bottom: 1.5px solid var(--ink); padding: 6px 2px; outline: none; background: transparent;
+  }
+  .field input:focus { border-bottom-color: var(--accent); }
+  .field input.invalid { border-bottom-color: var(--warn); background: #fff5f4; }
+  .student-error { color: var(--warn); font-size: 13px; min-height: 18px; }
+
+  .rules {
+    background: #f7f8fa; border: 1px solid var(--line); border-radius: 6px;
+    padding: 14px 18px; font-size: 14px; color: #333a45; margin-top: 10px;
+  }
+  .rules ol { margin: 6px 0 0; padding-left: 20px; }
+  .rules li { margin: 2px 0; }
+
+  /* ---------- sections ---------- */
+  .section { margin-top: 44px; }
+  .section-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    border-bottom: 1px solid var(--ink); padding-bottom: 6px; margin-bottom: 6px;
+  }
+  .section-head h2 { font-size: 20px; margin: 0; }
+  .section-head h2 .sec-letter { color: var(--accent); margin-right: 6px; }
+  .section-pts { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .section-note { font-size: 14px; color: var(--muted); margin: 6px 0 14px; }
+
+  .q {
+    padding: 20px 0; border-bottom: 1px dashed var(--line);
+    break-inside: avoid; page-break-inside: avoid;
+  }
+  .q:last-child { border-bottom: 0; }
+  .q-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .qid {
+    font-family: var(--mono); font-weight: 600; font-size: 13px;
+    background: var(--ink); color: #fff; border-radius: 4px; padding: 2px 8px;
+  }
+  .qpts { font-size: 12px; color: var(--faint); }
+  .badge {
+    font-size: 11.5px; font-weight: 600; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px; padding: 2px 10px;
+  }
+  .qtext { margin: 0 0 10px; font-size: 15.5px; }
+
+  code.inline {
+    font-family: var(--mono); font-size: .88em;
+    background: var(--code-bg); border: 1px solid #e6e9ee; border-radius: 4px; padding: 1px 5px;
+  }
+
+  pre.code {
+    margin: 6px 0 14px; background: var(--code-bg); border: 1px solid #e3e7ec;
+    border-radius: 6px; padding: 12px 0; overflow-x: auto;
+    font-family: var(--mono); font-size: 13.5px; line-height: 1.6;
+    counter-reset: ln;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  pre.code .line { display: block; padding: 0 16px 0 0; white-space: pre; }
+  pre.code .line::before {
+    counter-increment: ln; content: counter(ln);
+    display: inline-block; width: 36px; margin-right: 14px; text-align: right;
+    color: #b3b9c3; border-right: 1px solid #e3e7ec; padding-right: 8px;
+  }
+  .k { color: #0033b3; font-weight: 600; }
+  .s { color: #067d17; }
+  .n { color: #1750eb; }
+  .c { color: #8c8c8c; font-style: italic; }
+  .t { color: #00627a; }
+
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .opt {
+    display: flex; align-items: flex-start; gap: 10px;
+    border: 1.5px solid var(--line); border-radius: 8px; padding: 9px 12px;
+    cursor: pointer; transition: border-color .12s, background .12s;
+    font-size: 14.5px;
+  }
+  .opt:hover { border-color: #b8bfca; }
+  .opt input { position: absolute; opacity: 0; pointer-events: none; }
+  .letter {
+    flex: none; width: 24px; height: 24px; border: 1.5px solid #b8bfca;
+    display: grid; place-items: center; font-weight: 600; font-size: 13px; color: var(--muted);
+  }
+  .opt.radio .letter { border-radius: 50%; }
+  .opt.check .letter { border-radius: 5px; }
+  .opt.checked { border-color: var(--accent); background: var(--accent-soft); }
+  .opt.checked .letter { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .otext { padding-top: 1px; }
+
+  /* ---------- code tasks ---------- */
+  .task-example { font-size: 14px; color: var(--muted); margin: -4px 0 10px; }
+  textarea.answer {
+    width: 100%; min-height: 220px; resize: vertical;
+    font-family: var(--mono); font-size: 13.5px; line-height: 1.55;
+    border: 1.5px solid var(--line); border-radius: 6px; padding: 12px 14px;
+    background: #fcfcfd; color: var(--ink); outline: none; tab-size: 4;
+  }
+  textarea.answer:focus { border-color: var(--accent); background: #fff; }
+  .print-code { display: none; }
+
+  .finish {
+    margin-top: 48px; padding-top: 24px; border-top: 2px solid var(--ink);
+    display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+  }
+  .finish p { margin: 0; color: var(--muted); font-size: 14px; max-width: 520px; }
+
+  .answer-sheet, .print-meta { display: none; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: #fff; font-size: 14px; padding: 10px 18px; border-radius: 8px;
+    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 50;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 720px) {
+    .paper { padding: 28px 20px; margin: 0; border-radius: 0; }
+    .student { grid-template-columns: 1fr; }
+    .opts { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- print / PDF ---------- */
+  @page { size: A4; margin: 14mm 14mm 16mm; }
+  @media print {
+    body { background: #fff; }
+    .toolbar, .rules, .finish, .toast, .student-error { display: none !important; }
+    .paper { margin: 0; padding: 0; border: 0; box-shadow: none; max-width: none; }
+    .section { margin-top: 26px; }
+    .section-head { break-after: avoid; }
+    .q { padding: 12px 0; }
+    .opt { padding: 6px 10px; border-color: #d0d4da; }
+    .opt:not(.checked) { color: #5d6573; }
+    .opt.checked { border: 2px solid #000; background: #eef0fc; color: #000; font-weight: 600;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .opt.checked .letter { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .q.code-task { break-inside: auto; page-break-inside: auto; }
+    textarea.answer { display: none; }
+    .print-code {
+      display: block; white-space: pre-wrap; word-break: break-word;
+      font-family: var(--mono); font-size: 11.5px; line-height: 1.5;
+      border: 1.5px solid #000; border-radius: 4px; padding: 10px 12px; min-height: 40px;
+    }
+    .print-code.empty { color: #8a919e; font-style: italic; }
+    .print-meta { display: flex; gap: 22px; flex-wrap: wrap; font-size: 12px; color: #333; margin-top: 10px; }
+    .answer-sheet { display: block; break-before: page; }
+    .sheet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px 14px; margin-top: 10px; }
+    .sheet-cell { display: flex; justify-content: space-between; border-bottom: 1px solid #ccc; padding: 4px 2px;
+      font-family: var(--mono); font-size: 12.5px; }
+    .sheet-cell b { font-family: var(--sans); }
+    .field input { border-bottom: 1px solid #000; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <a class="tb-back" href="../../" title="ყველა ტესტი">←</a>
+    <div class="tb-item">
+      <span class="tb-label">დარჩენილი დრო</span>
+      <span class="tb-value" id="timer">120:00</span>
+    </div>
+    <div class="tb-item">
+      <span class="tb-label">პასუხი</span>
+      <span class="tb-value" id="progress">0 / 0</span>
+    </div>
+    <div class="tb-spacer"></div>
+    <button class="btn" id="pdfBtnTop" type="button">PDF-ად გადმოწერა</button>
+  </div>
+</div>
+
+<main class="paper">
+  <header class="exam-head">
+    <div class="eyebrow">შემაჯამებელი გამოცდა</div>
+    <h1>C# საფუძვლები</h1>
+    <div class="exam-meta">
+      <span>ცვლადები · ოპერატორები · პირობები · ციკლები · მასივები · მეთოდები</span>
+    </div>
+    <div class="exam-meta" style="margin-top:4px">
+      <span>⏱ 120 წუთი</span>
+      <span>მაქსიმუმი: <b id="maxPts">100</b> ქულა</span>
+    </div>
+
+    <div class="student">
+      <div class="field"><label for="fFirst">სახელი</label><input id="fFirst" autocomplete="off"></div>
+      <div class="field"><label for="fLast">გვარი</label><input id="fLast" autocomplete="off"></div>
+      <div class="field"><label for="fGroup">ჯგუფი</label><input id="fGroup" autocomplete="off"></div>
+    </div>
+    <div class="student-error" id="studentError"></div>
+    <div class="print-meta" id="printMeta"></div>
+
+    <div class="rules">
+      <b>ინსტრუქცია</b>
+      <ol>
+        <li>A, B და C ნაწილებში აირჩიე სწორი პასუხი. სადაც წერია <b>„შესაძლოა რამდენიმე სწორი პასუხი“</b>, მონიშნე ყველა სწორი.</li>
+        <li>D ნაწილის კოდი დაწერე <b>Visual Studio-ში</b>, გაუშვი, შეამოწმე და მზა კოდი ჩასვი შესაბამის ველში.</li>
+        <li>პასუხები ავტომატურად ინახება. გვერდის განახლებისას არ დაიკარგება.</li>
+        <li>ბოლოს დააჭირე <b>„PDF-ად გადმოწერა“</b>, ფანჯარაში აირჩიე <b>Save as PDF</b> და ფაილი ატვირთე.</li>
+      </ol>
+    </div>
+  </header>
+
+  <div id="exam"></div>
+
+  <section class="answer-sheet" id="answerSheet">
+    <div class="section-head"><h2>პასუხების ფურცელი</h2><span class="section-pts" id="sheetStudent"></span></div>
+    <div class="sheet-grid" id="sheetGrid"></div>
+  </section>
+
+  <div class="finish">
+    <p>დარწმუნდი, რომ სახელი, გვარი და ჯგუფი შევსებულია და ყველა კითხვას უპასუხე. ფანჯარაში აირჩიე <b>Save as PDF</b>.</p>
+    <button class="btn" id="pdfBtn" type="button">PDF-ად გადმოწერა</button>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   გამოცდის კითხვები (სწორი პასუხები ფაილში არ ინახება)
+   ========================================================= */
+const EXAM = [
+  {
+    id: 'A', title: 'თეორია', points: 2,
+    note: 'აირჩიე სწორი პასუხი.',
+    items: [
+      { id: 'A1', multi: true, text: 'რომელია ცვლადის სწორი გამოცხადება?',
+        options: ['`int age = 16;`', '`int 2age = 16;`', '`string name = "ანა";`', '`bool isReady = "true";`'] },
+      { id: 'A2', text: '`int[] arr = new int[5];` — რა არის ბოლო ელემენტის ინდექსი?',
+        options: ['`5`', '`4`', '`0`', '`6`'] },
+      { id: 'A3', text: '`int[] nums = new int[3];` — რა მნიშვნელობა აქვს `nums[1]`-ს შექმნისთანავე?',
+        options: ['`0`', '`null`', '`1`', 'შემთხვევითი რიცხვი'] },
+      { id: 'A4', text: 'რომელი ციკლი სრულდება მინიმუმ ერთხელ, პირობის მიუხედავად?',
+        options: ['`for`', '`while`', '`do...while`', '`foreach`'] },
+      { id: 'A5', text: 'რას უდრის `17 % 5`?',
+        options: ['`3`', '`12`', '`3.4`', '`2`'] },
+      { id: 'A6', text: 'რა მნიშვნელობას მიიღებს `r`?  `int r = 7 / 2;`',
+        options: ['`3.5`', '`4`', '`3`', 'კომპილაციის შეცდომა'] },
+      { id: 'A7', multi: true, text: 'რომელია შედარების ოპერატორი?',
+        options: ['`==`', '`=`', '`!=`', '`>=`'] },
+      { id: 'A8', text: 'რას ნიშნავს `void` მეთოდის გამოცხადებაში?',
+        options: ['მეთოდს პარამეტრები არ აქვს', 'მეთოდი მნიშვნელობას არ აბრუნებს', 'მეთოდის სხეული ცარიელია', 'მეთოდის გამოძახება მხოლოდ ერთხელ შეიძლება'] },
+      { id: 'A9', text: 'რომელია მეთოდის სწორი გამოცხადება, რომელიც ორ მთელ რიცხვს იღებს და მათ ჯამს აბრუნებს?',
+        options: ['`static void Sum(int a, int b)`', '`static int Sum(a, b)`', '`static Sum(int a, int b) int`', '`static int Sum(int a, int b)`'] },
+      { id: 'A10', multi: true, text: 'რომელი ჩანაწერი ზრდის `x`-ს 1-ით?',
+        options: ['`x++;`', '`x += 1;`', '`x = x + 1;`', '`x =+ 1;`'] },
+    ]
+  },
+  {
+    id: 'B', title: 'რას დაბეჭდავს?', points: 2,
+    note: 'წაიკითხე კოდი და აირჩიე, რას დაბეჭდავს კონსოლში.',
+    items: [
+      { id: 'B1', code:
+`int x = 5;
+x += 3;
+x *= 2;
+Console.WriteLine(x);`,
+        options: ['`13`', '`11`', '`16`', '`10`'] },
+      { id: 'B2', code:
+`for (int i = 0; i < 5; i += 2)
+{
+    Console.Write(i + " ");
+}`,
+        options: ['`0 1 2 3 4`', '`0 2 4`', '`2 4`', '`0 2 4 6`'] },
+      { id: 'B3', code:
+`int a = 5;
+int b = a++ + ++a;
+Console.WriteLine($"{a} {b}");`,
+        options: ['`6 11`', '`7 11`', '`7 12`', '`6 12`'] },
+      { id: 'B4', code:
+`int[] nums = { 4, 8, 15, 16, 23 };
+int sum = 0;
+
+foreach (int n in nums)
+{
+    if (n % 2 == 0)
+        sum += n;
+}
+
+Console.WriteLine(sum);`,
+        options: ['`28`', '`66`', '`12`', '`20`'] },
+      { id: 'B5', code:
+`string s = "5" + 3 + 2;
+Console.WriteLine(s);`,
+        options: ['`10`', '`532`', '`55`', 'კომპილაციის შეცდომა'] },
+      { id: 'B6', code:
+`static void Change(int x)
+{
+    x = 100;
+}
+
+int a = 1;
+Change(a);
+Console.WriteLine(a);`,
+        options: ['`100`', '`0`', '`1`', 'კომპილაციის შეცდომა'] },
+      { id: 'B7', code:
+`static void Change(int[] arr)
+{
+    arr[0] = 100;
+}
+
+int[] a = { 1, 2, 3 };
+Change(a);
+Console.WriteLine(a[0]);`,
+        options: ['`1`', '`100`', '`2`', 'კომპილაციის შეცდომა'] },
+      { id: 'B8', code:
+`int count = 0;
+
+for (int i = 0; i < 3; i++)
+{
+    for (int j = 0; j < 4; j++)
+    {
+        count++;
+    }
+}
+
+Console.WriteLine(count);`,
+        options: ['`7`', '`9`', '`16`', '`12`'] },
+      { id: 'B9', code:
+`Console.WriteLine(10 / 4 * 2.0);`,
+        options: ['`5`', '`4.5`', '`4`', '`2`'] },
+      { id: 'B10', code:
+`for (int i = 1; i <= 6; i++)
+{
+    if (i == 2) continue;
+    if (i == 5) break;
+    Console.Write(i);
+}`,
+        options: ['`1234`', '`13`', '`1346`', '`134`'] },
+    ]
+  },
+  {
+    id: 'C', title: 'იპოვე შეცდომა', points: 2,
+    note: 'კოდი სწორად არ მუშაობს. აირჩიე, რა არის პრობლემა.',
+    items: [
+      { id: 'C1', text: 'კოდმა მასივის ყველა ელემენტი უნდა დაბეჭდოს. რა პრობლემაა?', code:
+`int[] arr = { 1, 2, 3, 4, 5 };
+
+for (int i = 0; i <= arr.Length; i++)
+{
+    Console.WriteLine(arr[i]);
+}`,
+        options: ['მასივის ინდექსაცია 1-დან იწყება', '`i <= arr.Length` ბოლო იტერაციაზე `IndexOutOfRangeException`-ს იწვევს', '`Console.WriteLine` `int`-ს ვერ ბეჭდავს', '`for` ციკლით მასივის გავლა შეუძლებელია'] },
+      { id: 'C2', text: 'მეთოდმა ორი რიცხვიდან უდიდესი უნდა დააბრუნოს. რა პრობლემაა?', code:
+`static int Max(int a, int b)
+{
+    if (a > b)
+    {
+        return a;
+    }
+}`,
+        options: ['`return` მხოლოდ მეთოდის ბოლო ხაზზე შეიძლება', 'მეთოდი `void` უნდა იყოს', 'როცა `a <= b`, მეთოდი არაფერს აბრუნებს — კომპილაციის შეცდომა', 'ორ პარამეტრს ერთნაირი ტიპი არ შეიძლება ჰქონდეს'] },
+      { id: 'C3', text: 'კოდმა ქულების საშუალო უნდა დაბეჭდოს (84.33...). რა პრობლემაა?', code:
+`int[] scores = { 90, 85, 78 };
+int sum = 0;
+
+for (int i = 0; i < scores.Length; i++)
+{
+    sum += scores[i];
+}
+
+double avg = sum / scores.Length;
+Console.WriteLine(avg);`,
+        options: ['`sum / scores.Length` მთელრიცხვითი გაყოფაა — დაიბეჭდება `84`', 'ციკლი ბოლო ელემენტს გამოტოვებს', '`double` ცვლადს `int`-ის მინიჭება არ შეიძლება', '`sum` უნდა იყოს `string`'] },
+      { id: 'C4', multi: true, text: 'კოდმა 0-დან 9-მდე რიცხვები უნდა დაბეჭდოს. რა ხდება და როგორ გასწორდება?', code:
+`int i = 0;
+
+while (i < 10)
+{
+    Console.WriteLine(i);
+}`,
+        options: ['დაიბეჭდება 0-დან 9-მდე, კოდი სწორია', '`while`-ის პირობაში `<` არ შეიძლება', '`i` არასდროს იზრდება — ციკლი უსასრულოა', 'გამოსწორება: ციკლის შიგნით `i++;`-ის დამატება'] },
+      { id: 'C5', multi: true, text: 'კოდმა უნდა შეამოწმოს, უდრის თუ არა `x` 10-ს. რა პრობლემაა?', code:
+`int x = 5;
+
+if (x = 10)
+{
+    Console.WriteLine("ათია");
+}`,
+        options: ['`=` მინიჭებაა, შედარებისთვის `==` სჭირდება', '`x` უნდა იყოს `const`', 'C#-ში `int` ავტომატურად `bool`-ად არ გარდაიქმნება — კომპილაციის შეცდომა', 'დაიბეჭდება „ათია“'] },
+      { id: 'C6', text: 'კოდმა ციკლის ბოლო `total` უნდა დაბეჭდოს. რა პრობლემაა?', code:
+`for (int i = 0; i < 3; i++)
+{
+    int total = i * 2;
+}
+
+Console.WriteLine(total);`,
+        options: ['დაიბეჭდება `4`', '`i * 2` C#-ში დაუშვებელი ოპერაციაა', '`Console.WriteLine`-ს ორი არგუმენტი სჭირდება', '`total` ციკლის შიგნითაა გამოცხადებული და გარეთ არ ჩანს — კომპილაციის შეცდომა'] },
+      { id: 'C7', multi: true, text: 'მეთოდმა `x` და `y` ერთმანეთს უნდა გაუცვალოს. რა ხდება რეალურად?', code:
+`static void Swap(int a, int b)
+{
+    int temp = a;
+    a = b;
+    b = temp;
+}
+
+int x = 1, y = 2;
+Swap(x, y);
+Console.WriteLine($"{x} {y}");`,
+        options: ['დაიბეჭდება `2 1`', 'დაიბეჭდება `1 2`', 'კომპილაციის შეცდომა', 'მეთოდი პარამეტრების ასლებს ცვლის, ამიტომ `x` და `y` უცვლელი რჩება'] },
+    ]
+  },
+  {
+    id: 'D', title: 'დაწერე კოდი', type: 'code',
+    note: 'დაწერე Visual Studio-ში, გაუშვი და შეამოწმე. ველში ჩასვი მეთოდი და მისი გამოძახება.',
+    items: [
+      { id: 'D1', points: 8,
+        text: 'დაწერე მეთოდი, რომელიც მასივში დადებითი რიცხვების რაოდენობას აბრუნებს.',
+        code: `static int CountPositive(int[] arr)`,
+        example: 'მაგალითი: `{ -3, 5, 0, 8, -1 }` → `2`' },
+      { id: 'D2', points: 10,
+        text: 'დაწერე Bubble Sort მეთოდი, რომელიც მასივს ზრდადობით ალაგებს. `Array.Sort`-ის გამოყენება აკრძალულია.',
+        code: `static void BubbleSort(int[] arr)`,
+        example: 'მაგალითი: `{ 5, 2, 9, 1 }` → `{ 1, 2, 5, 9 }`' },
+      { id: 'D3', points: 10,
+        text: 'დაწერე მეთოდი, რომელიც ამოწმებს, არის თუ არა რიცხვი მარტივი.',
+        code: `static bool IsPrime(int n)`,
+        example: 'მაგალითი: `7` → `true`, `9` → `false`, `1` → `false`' },
+      { id: 'D4', points: 8,
+        text: 'დაბეჭდე რიცხვები 1-დან 30-მდე. 3-ის ჯერადის ნაცვლად დაბეჭდე `Fizz`, 5-ის ჯერადის ნაცვლად `Buzz`, ორივეს ჯერადის ნაცვლად `FizzBuzz`.',
+        example: 'მაგალითი: `1 2 Fizz 4 Buzz Fizz 7 ... 14 FizzBuzz 16 ...`' },
+      { id: 'D5', points: 10,
+        text: 'დაწერე მეთოდი, რომელიც აბრუნებს ახალ, შებრუნებულ მასივს. საწყისი მასივი არ უნდა შეიცვალოს.',
+        code: `static int[] Reverse(int[] arr)`,
+        example: 'მაგალითი: `{ 1, 2, 3, 4 }` → `{ 4, 3, 2, 1 }`' },
+    ]
+  },
+];
+
+const LETTERS = ['ა', 'ბ', 'გ', 'დ'];
+const DURATION_MIN = 120;
+const STORE_KEY = 'exam:' + location.pathname;
+
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const inline = s => esc(s).replace(/`([^`]+)`/g, '<code class="inline">$1</code>');
+
+function highlight(src) {
+  const re = /(\/\/[^\n]*)|(\$?"(?:[^"\\\n]|\\.)*")|(\b\d+(?:\.\d+)?\b)|\b(int|double|string|bool|void|static|return|if|else|for|foreach|in|while|do|new|true|false|var|break|continue|const|char|null)\b|\b(Console|Array|Math)\b/g;
+  let out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    const cls = m[1] ? 'c' : m[2] ? 's' : m[3] ? 'n' : m[4] ? 'k' : 't';
+    out += `<span class="${cls}">${esc(m[0])}</span>`;
+    last = re.lastIndex;
+  }
+  out += esc(src.slice(last));
+  return out.split('\n').map(l => `<span class="line">${l || ' '}</span>`).join('');
+}
+const codeBlock = src => `<pre class="code">${highlight(src)}</pre>`;
+
+/* ---------- state ---------- */
+let state = { meta: { first: '', last: '', group: '' }, answers: {}, code: {}, start: null };
+try {
+  const saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+  if (saved) state = Object.assign(state, saved);
+} catch (e) {}
+if (!state.start) state.start = Date.now();
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
+save();
+
+/* ---------- render ---------- */
+function render() {
+  const root = $('#exam');
+  let html = '';
+  let total = 0;
+  for (const sec of EXAM) {
+    const secPts = sec.type === 'code'
+      ? sec.items.reduce((a, q) => a + q.points, 0)
+      : sec.items.length * sec.points;
+    total += secPts;
+    html += `<section class="section">
+      <div class="section-head">
+        <h2><span class="sec-letter">${sec.id}</span>${esc(sec.title)}</h2>
+        <span class="section-pts">${secPts} ქულა</span>
+      </div>
+      <p class="section-note">${inline(sec.note)}</p>`;
+
+    for (const q of sec.items) {
+      if (sec.type === 'code') {
+        html += `<article class="q code-task" id="q-${q.id}">
+          <div class="q-head"><span class="qid">${q.id}</span><span class="qpts">${q.points} ქულა</span></div>
+          <p class="qtext">${inline(q.text)}</p>
+          ${q.code ? codeBlock(q.code) : ''}
+          ${q.example ? `<p class="task-example">${inline(q.example)}</p>` : ''}
+          <textarea class="answer" data-q="${q.id}" spellcheck="false"
+            placeholder="// ჩასვი აქ Visual Studio-ში დაწერილი კოდი"></textarea>
+          <div class="print-code" data-print="${q.id}"></div>
+        </article>`;
+      } else {
+        const type = q.multi ? 'checkbox' : 'radio';
+        html += `<article class="q" id="q-${q.id}">
+          <div class="q-head">
+            <span class="qid">${q.id}</span><span class="qpts">${sec.points} ქულა</span>
+            ${q.multi ? '<span class="badge">შესაძლოა რამდენიმე სწორი პასუხი</span>' : ''}
+          </div>
+          ${q.text ? `<p class="qtext">${inline(q.text)}</p>` : ''}
+          ${q.code ? codeBlock(q.code) : ''}
+          <div class="opts">
+            ${q.options.map((o, i) => `
+              <label class="opt ${q.multi ? 'check' : 'radio'}">
+                <input type="${type}" name="${q.id}" value="${i}">
+                <span class="letter">${LETTERS[i]}</span>
+                <span class="otext">${inline(o)}</span>
+              </label>`).join('')}
+          </div>
+        </article>`;
+      }
+    }
+    html += `</section>`;
+  }
+  root.innerHTML = html;
+  $('#maxPts').textContent = total;
+}
+
+function restore() {
+  $('#fFirst').value = state.meta.first || '';
+  $('#fLast').value = state.meta.last || '';
+  $('#fGroup').value = state.meta.group || '';
+  for (const [qid, vals] of Object.entries(state.answers)) {
+    vals.forEach(v => {
+      const inp = document.querySelector(`input[name="${qid}"][value="${v}"]`);
+      if (inp) inp.checked = true;
+    });
+  }
+  document.querySelectorAll('textarea.answer').forEach(t => { t.value = state.code[t.dataset.q] || ''; });
+  syncOptionClasses();
+  updateProgress();
+}
+
+function syncOptionClasses() {
+  document.querySelectorAll('.opt').forEach(l => l.classList.toggle('checked', l.querySelector('input').checked));
+}
+
+const allQuestions = () => EXAM.flatMap(s => s.items.map(q => ({ ...q, code_task: s.type === 'code' })));
+function updateProgress() {
+  const qs = allQuestions();
+  const done = qs.filter(q => q.code_task
+    ? (state.code[q.id] || '').trim().length > 0
+    : (state.answers[q.id] || []).length > 0).length;
+  $('#progress').textContent = `${done} / ${qs.length}`;
+}
+
+/* ---------- events ---------- */
+document.addEventListener('change', e => {
+  const inp = e.target;
+  if (inp.matches('.opt input')) {
+    const qid = inp.name;
+    state.answers[qid] = [...document.querySelectorAll(`input[name="${qid}"]:checked`)].map(i => +i.value);
+    syncOptionClasses(); updateProgress(); save();
+  }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.matches('textarea.answer')) { state.code[t.dataset.q] = t.value; updateProgress(); save(); }
+  if (t.id === 'fFirst') { state.meta.first = t.value; t.classList.remove('invalid'); save(); }
+  if (t.id === 'fLast') { state.meta.last = t.value; t.classList.remove('invalid'); save(); }
+  if (t.id === 'fGroup') { state.meta.group = t.value; t.classList.remove('invalid'); save(); }
+});
+
+/* Tab ჩასმა textarea-ში */
+document.addEventListener('keydown', e => {
+  const t = e.target;
+  if (e.key === 'Tab' && t.matches && t.matches('textarea.answer')) {
+    e.preventDefault();
+    const s = t.selectionStart, en = t.selectionEnd;
+    t.value = t.value.slice(0, s) + '    ' + t.value.slice(en);
+    t.selectionStart = t.selectionEnd = s + 4;
+    t.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+});
+
+/* ---------- კოპირების დაბლოკვა ---------- */
+const isEditable = t => {
+  const n = t && t.nodeType === 3 ? t.parentElement : t;
+  return !!(n && n.closest && n.closest('textarea, input'));
+};
+let toastTimer;
+function toast(msg) {
+  const el = $('#toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+['copy', 'cut'].forEach(ev => document.addEventListener(ev, e => {
+  if (!isEditable(e.target)) { e.preventDefault(); toast('კოპირება გამორთულია'); }
+}));
+document.addEventListener('contextmenu', e => { if (!isEditable(e.target)) e.preventDefault(); });
+document.addEventListener('selectstart', e => { if (!isEditable(e.target)) e.preventDefault(); });
+document.addEventListener('dragstart', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  const k = (e.key || '').toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && ['c', 'x', 'a', 's', 'u'].includes(k) && !isEditable(e.target)) {
+    e.preventDefault();
+    if (k === 'c' || k === 'x') toast('კოპირება გამორთულია');
+  }
+  if (e.key === 'F12') e.preventDefault();
+});
+
+/* ---------- ტაიმერი ---------- */
+const pad = n => String(n).padStart(2, '0');
+function tick() {
+  const left = Math.round((state.start + DURATION_MIN * 60000 - Date.now()) / 1000);
+  const el = $('#timer');
+  if (left >= 0) {
+    el.textContent = `${pad(Math.floor(left / 60))}:${pad(left % 60)}`;
+    el.classList.remove('over');
+  } else {
+    const o = -left;
+    el.textContent = `+${pad(Math.floor(o / 60))}:${pad(o % 60)}`;
+    el.classList.add('over');
+  }
+}
+setInterval(tick, 1000); tick();
+
+/* ---------- PDF ---------- */
+const fmt = d => `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+function preparePrint() {
+  document.querySelectorAll('textarea.answer').forEach(t => {
+    const p = document.querySelector(`[data-print="${t.dataset.q}"]`);
+    const v = t.value.replace(/\s+$/, '');
+    p.textContent = v || '— პასუხი არ არის —';
+    p.classList.toggle('empty', !v);
+  });
+
+  const now = new Date();
+  const mins = Math.round((now - state.start) / 60000);
+  $('#printMeta').innerHTML =
+    `<span>დაწყება: <b>${fmt(new Date(state.start))}</b></span>` +
+    `<span>ექსპორტი: <b>${fmt(now)}</b></span>` +
+    `<span>დახარჯული დრო: <b>${mins} წთ</b></span>` +
+    `<span>პასუხი: <b>${$('#progress').textContent}</b></span>`;
+
+  const name = `${state.meta.first} ${state.meta.last}`.trim();
+  $('#sheetStudent').textContent = `${name} · ${state.meta.group}`;
+  $('#sheetGrid').innerHTML = EXAM.filter(s => s.type !== 'code').flatMap(s => s.items).map(q => {
+    const a = (state.answers[q.id] || []).slice().sort().map(i => LETTERS[i]).join(', ');
+    return `<div class="sheet-cell"><b>${q.id}</b><span>${a || '—'}</span></div>`;
+  }).join('');
+}
+window.addEventListener('beforeprint', preparePrint);
+
+let originalTitle = document.title;
+window.addEventListener('afterprint', () => { document.title = originalTitle; });
+
+function exportPdf() {
+  const fields = [['fFirst', 'first'], ['fLast', 'last'], ['fGroup', 'group']];
+  const missing = fields.filter(([id, k]) => !(state.meta[k] || '').trim());
+  fields.forEach(([id]) => $('#' + id).classList.remove('invalid'));
+  if (missing.length) {
+    missing.forEach(([id]) => $('#' + id).classList.add('invalid'));
+    $('#studentError').textContent = 'შეავსე სახელი, გვარი და ჯგუფი.';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    $('#' + missing[0][0]).focus();
+    return;
+  }
+  $('#studentError').textContent = '';
+  preparePrint();
+  originalTitle = document.title;
+  document.title = `CSharp_${state.meta.last}_${state.meta.first}_${state.meta.group}`.replace(/\s+/g, '_');
+  window.print();
+}
+$('#pdfBtn').addEventListener('click', exportPdf);
+$('#pdfBtnTop').addEventListener('click', exportPdf);
+
+/* ---------- init ---------- */
+render();
+restore();
+</script>
+</body>
+</html>

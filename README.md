@@ -1,0 +1,36 @@
+# ტესტები
+
+ყველა ტესტი ერთ ადგილას. მთავარ გვერდზე ტესტები ქარდებად ჩანს, კურსების მიხედვით.
+
+**საიტი:** https://learn-easily.github.io/tests/
+
+## სტრუქტურა
+
+```
+engine/index.html               მთავარი გვერდის შაბლონი (ქარდები, ჩანართები, ძებნა)
+courses/
+  <კურსი>/course.json           {"title", "order"}: ერთი კურსი = ერთი ჩანართი
+  <კურსი>/<NN-slug>/
+    test.html                   ტესტი (ერთი თვითკმარი HTML)
+    test.json                   {"title", "topics", "duration", "questions", "points"}
+build.py                        აწყობს index.html-ს და <კურსი>/<ტესტი>/ საქაღალდეებს root-ში
+```
+
+> root-ის `index.html` და `csharp/`-ის ტიპის საქაღალდეები ბილდის შედეგია. ხელით არ შეცვალო: შეცვალე `courses/` და გაუშვი ბილდი.
+
+## ახალი ტესტი
+
+1. შექმენი `courses/<კურსი>/<NN-slug>/test.html` და `test.json`.
+2. ახალი კურსისთვის დაამატე `courses/<კურსი>/course.json`.
+3. გაუშვი `python3 build.py`, შემდეგ commit და push `main`-ზე.
+
+## გასაღები
+
+რეპო public-ია, ამიტომ სწორი პასუხები აქ **არ** ინახება, არც `test.html`-ში, არც სხვაგან.
+
+## ლოკალურად
+
+```bash
+python3 build.py
+python3 -m http.server 8000      # http://localhost:8000
+```
