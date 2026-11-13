@@ -1,0 +1,7 @@
+{
+  "title": "ASP.NET Core Web API — შუალედური 2 (რთული)",
+  "topics": ["Web API", "REST", "Controllers", "DTO", "DI", "C#", "EF Core", "SQL"],
+  "duration": 120,
+  "questions": 50,
+  "points": 100
+}

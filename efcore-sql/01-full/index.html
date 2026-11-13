@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EF Core & SQL — სრული ტესტი</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1d23; --muted: #5d6573; --faint: #8a919e;
+    --bg: #eceef2; --paper: #fff; --line: #dde1e7;
+    --accent: #3346c4; --accent-soft: #eef0fc;
+    --ok: #15803d; --ok-soft: #ecfdf3; --bad: #b42318; --bad-soft: #fef3f2; --part: #b54708; --part-soft: #fffaeb;
+    --code-bg: #f6f8fa;
+    --sans: "Noto Sans Georgian", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: var(--sans); color: var(--ink); background: var(--bg); line-height: 1.55; -webkit-user-select: none; user-select: none; }
+  input { -webkit-user-select: text; user-select: text; }
+
+  .toolbar { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.94); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+  .toolbar-inner { max-width: 880px; margin: 0 auto; padding: 10px 24px; display: flex; align-items: center; gap: 20px; }
+  .tb-back { font-size: 20px; color: var(--muted); text-decoration: none; padding: 2px 6px; border-radius: 6px; }
+  .tb-back:hover { color: var(--ink); background: var(--bg); }
+  .tb-item { display: flex; flex-direction: column; line-height: 1.2; }
+  .tb-label { font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; }
+  .tb-value { font-family: var(--mono); font-weight: 600; font-size: 17px; }
+  .tb-value.over { color: var(--bad); }
+  .tb-spacer { flex: 1; }
+  .btn { font-family: var(--sans); font-size: 14px; font-weight: 600; border: 0; border-radius: 8px; padding: 10px 18px; cursor: pointer; background: var(--accent); color: #fff; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+  .btn.finish-btn { background: var(--ink); }
+
+  .paper { max-width: 880px; margin: 28px auto 60px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 48px 56px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.04); }
+  .exam-head { border-bottom: 2px solid var(--ink); padding-bottom: 20px; margin-bottom: 8px; }
+  .eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  h1 { font-size: 28px; margin: 6px 0 4px; line-height: 1.25; }
+  .exam-meta { color: var(--muted); font-size: 14px; display: flex; gap: 18px; flex-wrap: wrap; }
+  .student { display: grid; grid-template-columns: 1fr 1fr 160px; gap: 14px; margin: 22px 0 6px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+  .field input { width: 100%; font-family: var(--sans); font-size: 15px; border: 0; border-bottom: 1.5px solid var(--ink); padding: 6px 2px; outline: none; background: transparent; }
+  .field input:focus { border-bottom-color: var(--accent); }
+  .field input.invalid { border-bottom-color: var(--bad); background: var(--bad-soft); }
+  .field input:disabled { color: var(--ink); -webkit-text-fill-color: var(--ink); }
+  .student-error { color: var(--bad); font-size: 13px; min-height: 18px; }
+  .print-meta { display: none; }
+  .rules { background: #f7f8fa; border: 1px solid var(--line); border-radius: 6px; padding: 14px 18px; font-size: 14px; color: #333a45; margin-top: 10px; }
+  .rules ol { margin: 6px 0 0; padding-left: 20px; } .rules li { margin: 2px 0; }
+
+  .section { margin-top: 44px; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid var(--ink); padding-bottom: 6px; margin-bottom: 6px; }
+  .section-head h2 { font-size: 20px; margin: 0; }
+  .section-head h2 .sec-letter { color: var(--accent); margin-right: 6px; }
+  .section-pts { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .section-note { font-size: 14px; color: var(--muted); margin: 6px 0 14px; }
+
+  .q { padding: 20px 0; border-bottom: 1px dashed var(--line); break-inside: avoid; page-break-inside: avoid; }
+  .q:last-child { border-bottom: 0; }
+  .q-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .qid { font-family: var(--mono); font-weight: 600; font-size: 13px; background: var(--ink); color: #fff; border-radius: 4px; padding: 2px 8px; }
+  .qpts { font-size: 12px; color: var(--faint); }
+  .badge { font-size: 11.5px; font-weight: 600; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 2px 10px; }
+  .qtext { margin: 0 0 10px; font-size: 15.5px; }
+  code.inline { font-family: var(--mono); font-size: .88em; background: var(--code-bg); border: 1px solid #e6e9ee; border-radius: 4px; padding: 1px 5px; }
+
+  pre.code { margin: 6px 0 14px; background: var(--code-bg); border: 1px solid #e3e7ec; border-radius: 6px; padding: 12px 0; overflow-x: auto;
+    font-family: var(--mono); font-size: 13.5px; line-height: 1.6; counter-reset: ln; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  pre.code .line { display: block; padding: 0 16px 0 0; white-space: pre; }
+  pre.code .line::before { counter-increment: ln; content: counter(ln); display: inline-block; width: 36px; margin-right: 14px; text-align: right;
+    color: #b3b9c3; border-right: 1px solid #e3e7ec; padding-right: 8px; }
+  .k { color: #0033b3; font-weight: 600; } .s { color: #067d17; } .n { color: #1750eb; } .c { color: #8c8c8c; font-style: italic; } .t { color: #00627a; } .a { color: #9e880d; }
+
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .opt { display: flex; align-items: flex-start; gap: 10px; border: 1.5px solid var(--line); border-radius: 8px; padding: 9px 12px; cursor: pointer;
+    transition: border-color .12s, background .12s; font-size: 14.5px; }
+  .opt:hover { border-color: #b8bfca; }
+  .opt input { position: absolute; opacity: 0; pointer-events: none; }
+  .letter { flex: none; width: 24px; height: 24px; border: 1.5px solid #b8bfca; display: grid; place-items: center; font-weight: 600; font-size: 13px; color: var(--muted); }
+  .opt.radio .letter { border-radius: 50%; } .opt.check .letter { border-radius: 5px; }
+  .opt.checked { border-color: var(--accent); background: var(--accent-soft); }
+  .opt.checked .letter { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .otext { padding-top: 1px; }
+
+  .finish { margin-top: 48px; padding-top: 24px; border-top: 2px solid var(--ink); display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .finish p { margin: 0; color: var(--muted); font-size: 14px; max-width: 520px; }
+
+  /* ---------- results ---------- */
+  #results { display: none; }
+  body.done #results { display: block; }
+  body.done #exam, body.done .finish, body.done .rules { display: none; }
+  .score-card { margin-top: 28px; display: grid; grid-template-columns: 220px 1fr; gap: 28px; align-items: center;
+    border: 1.5px solid var(--ink); border-radius: 10px; padding: 24px 28px; }
+  .score-big { font-family: var(--mono); font-weight: 700; font-size: 52px; line-height: 1; }
+  .score-big small { font-size: 20px; color: var(--muted); font-weight: 600; }
+  .score-sub { color: var(--muted); font-size: 14px; margin-top: 8px; }
+  .breakdown { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .breakdown td { padding: 6px 4px; border-bottom: 1px solid var(--line); }
+  .breakdown td:last-child { text-align: right; white-space: nowrap; font-family: var(--mono); font-weight: 600; }
+  .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; min-width: 80px; }
+  .bar i { display: block; height: 100%; background: var(--accent); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .res-actions { display: flex; gap: 10px; margin-top: 18px; }
+
+  .rv { padding: 18px 0; border-bottom: 1px dashed var(--line); break-inside: avoid; page-break-inside: avoid; }
+  .rv-status { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 2px 10px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rv-status.wrong { color: var(--bad); background: var(--bad-soft); }
+  .rv-status.partial { color: var(--part); background: var(--part-soft); }
+  .rv-status.empty { color: var(--muted); background: #f2f4f7; }
+  .rv-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+  .rv-list li { display: flex; gap: 10px; align-items: flex-start; border: 1.5px solid var(--line); border-radius: 8px; padding: 7px 12px; font-size: 14.5px;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rv-list li .mk { flex: none; width: 20px; font-weight: 700; text-align: center; }
+  .rv-list li.correct { border-color: var(--ok); background: var(--ok-soft); }
+  .rv-list li.correct .mk { color: var(--ok); }
+  .rv-list li.picked-wrong { border-color: var(--bad); background: var(--bad-soft); }
+  .rv-list li.picked-wrong .mk { color: var(--bad); }
+  .rv-list li .you { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; font-weight: 600; }
+  .why { margin-top: 10px; background: #f7f8fa; border-left: 3px solid var(--accent); padding: 10px 14px; font-size: 14.5px; border-radius: 0 6px 6px 0;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .why b { color: var(--accent); }
+  .ok-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .ok-chips span { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--ok); background: var(--ok-soft); border: 1px solid #abefc6; border-radius: 6px; padding: 2px 8px;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  .modal { position: fixed; inset: 0; background: rgba(16,24,40,.45); display: none; place-items: center; z-index: 60; padding: 20px; }
+  .modal.on { display: grid; }
+  .modal-box { background: #fff; border-radius: 12px; padding: 26px 28px; max-width: 440px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,.2); }
+  .modal-box h3 { margin: 0 0 8px; font-size: 19px; }
+  .modal-box p { margin: 0 0 18px; color: var(--muted); font-size: 14.5px; }
+  .modal-box .row { display: flex; gap: 10px; justify-content: flex-end; }
+
+  .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px); background: var(--ink); color: #fff; font-size: 14px; padding: 10px 18px;
+    border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 70; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 720px) {
+    .paper { padding: 28px 20px; margin: 0; border-radius: 0; }
+    .student, .opts, .score-card { grid-template-columns: 1fr; }
+  }
+
+  @page { size: A4; margin: 14mm 14mm 16mm; }
+  @media print {
+    body { background: #fff; }
+    .toolbar, .rules, .finish, .toast, .student-error, .modal, .res-actions { display: none !important; }
+    .paper { margin: 0; padding: 0; border: 0; box-shadow: none; max-width: none; }
+    .print-meta { display: flex; gap: 22px; flex-wrap: wrap; font-size: 12px; color: #333; margin-top: 10px; }
+    .section { margin-top: 26px; } .section-head { break-after: avoid; }
+    .q, .rv { padding: 12px 0; }
+    .field input { border-bottom: 1px solid #000; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <a class="tb-back" href="../../" title="ყველა ტესტი">←</a>
+    <div class="tb-item"><span class="tb-label" id="timerLabel">დარჩენილი დრო</span><span class="tb-value" id="timer">--:--</span></div>
+    <div class="tb-item"><span class="tb-label" id="progLabel">პასუხი</span><span class="tb-value" id="progress">0 / 0</span></div>
+    <div class="tb-spacer"></div>
+    <button class="btn finish-btn" id="finishTop" type="button">დასრულება</button>
+  </div>
+</div>
+
+<main class="paper">
+  <header class="exam-head">
+    <div class="eyebrow">შემაჯამებელი გამოცდა</div>
+    <h1>EF Core & SQL</h1>
+    <div class="exam-meta"><span>ცხრილები და კავშირები · JOIN · GROUP BY · ნორმალიზაცია · ORM · მიგრაციები · CRUD · Change Tracker · Code First / Database First</span></div>
+    <div class="exam-meta" style="margin-top:4px">
+      <span>⏱ 120 წუთი</span><span><b id="qCount"></b> კითხვა</span><span>მაქსიმუმი: <b id="maxPts"></b> ქულა</span>
+    </div>
+    <div class="student">
+      <div class="field"><label for="fFirst">სახელი</label><input id="fFirst" autocomplete="off"></div>
+      <div class="field"><label for="fLast">გვარი</label><input id="fLast" autocomplete="off"></div>
+      <div class="field"><label for="fGroup">ჯგუფი</label><input id="fGroup" autocomplete="off"></div>
+    </div>
+    <div class="student-error" id="studentError"></div>
+    <div class="print-meta" id="printMeta"></div>
+    <div class="rules">
+      <b>ინსტრუქცია</b>
+      <ol>
+        <li>ყველა კითხვას 4 სავარაუდო პასუხი აქვს. სადაც წერია <b>„შესაძლოა რამდენიმე სწორი პასუხი“</b>, მონიშნე ყველა სწორი.</li>
+        <li>რამდენიმე სწორპასუხიან კითხვაზე ყოველი სწორი მონიშვნა ქულას მატებს, ყოველი არასწორი კი აკლებს (მინიმუმ 0).</li>
+        <li>პასუხები ავტომატურად ინახება, გვერდის განახლებისას არ დაიკარგება.</li>
+        <li>ბოლოს დააჭირე <b>„დასრულება“</b>. ამის შემდეგ პასუხებს ვეღარ შეცვლი. ნახავ ქულას და შეცდომების ახსნას, PDF კი ავტომატურად გაიხსნება: აირჩიე <b>Save as PDF</b> და ფაილი ატვირთე.</li>
+      </ol>
+    </div>
+  </header>
+
+  <section id="results"></section>
+  <div id="exam"></div>
+
+  <div class="finish">
+    <p>დარწმუნდი, რომ სახელი, გვარი და ჯგუფი შევსებულია და ყველა კითხვას უპასუხე. დასრულების შემდეგ პასუხებს ვეღარ შეცვლი.</p>
+    <button class="btn finish-btn" id="finishBtn" type="button">დასრულება</button>
+  </div>
+</main>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3>დავასრულოთ ტესტი?</h3>
+    <p id="modalText"></p>
+    <div class="row">
+      <button class="btn ghost" id="modalNo" type="button">დაბრუნება</button>
+      <button class="btn finish-btn" id="modalYes" type="button">დასრულება</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const EXAM = [{"id": "A", "title": "SQL", "note": "ცხრილები: `Categories(Id, Name)`: (1, Phones), (2, Laptops), (3, Tablets). `Products(Id, Name, Price, CategoryId)`: (1, iPhone, 1500, 1), (2, Galaxy, 1200, 1), (3, MacBook, 3000, 2), (4, Cable, 20, `NULL`). სადაც სხვა რამ არ წერია, კითხვები ამ მონაცემებზეა.", "items": [{"id": "A1", "text": "რომელია Primary Key-ის თვისება?", "multi": true, "options": ["მნიშვნელობა უნიკალურია", "`NULL` ვერ იქნება", "ცხრილს რამდენიმე Primary Key შეიძლება ჰქონდეს", "აუცილებლად `INT` უნდა იყოს"]}, {"id": "A2", "text": "რას უზრუნველყოფს Foreign Key `Products.CategoryId → Categories.Id`?", "options": ["`CategoryId` ყველა პროდუქტს უნიკალური ექნება", "`CategoryId`-ში მხოლოდ არსებული კატეგორიის Id (ან `NULL`) ჩაიწერება", "კატეგორიის წაშლისას პროდუქტები ავტომატურად შეიქმნება", "მოთხოვნები უფრო სწრაფად შესრულდება"]}, {"id": "A3", "text": "სტუდენტს ბევრი კურსი აქვს, კურსს ბევრი სტუდენტი ჰყავს. როგორ აიგება ეს ბაზაში?", "options": ["`Students`-ში სვეტი `CourseId`", "`Courses`-ში სვეტი `StudentId`", "შუალედური ცხრილი `StudentCourses(StudentId, CourseId)`, ორივე FK", "`Students`-ში სვეტი `CourseIds` მძიმეებით: `1,4,7`"]}, {"id": "A4", "text": "რომელი ჩანაწერი ქმნის Foreign Key-ს სწორად?", "code": "CREATE TABLE Products (\n    Id INT PRIMARY KEY IDENTITY(1, 1),\n    Name NVARCHAR(100) NOT NULL,\n    CategoryId INT ______\n);", "lang": "sql", "options": ["`FOREIGN Categories(Id)`", "`REFERENCES Categories(Id)`", "`KEY Categories.Id`", "`FK -> Categories(Id)`"]}, {"id": "A5", "text": "`Id INT PRIMARY KEY IDENTITY(1, 1)`. რა მოხდება?", "code": "INSERT INTO Products (Id, Name, Price) VALUES (10, 'Mouse', 50);", "lang": "sql", "options": ["ჩაიწერება Id = 10-ით", "ჩაიწერება, Id ავტომატურად მიენიჭება და 10 იგნორირდება", "შეცდომა: IDENTITY სვეტში მნიშვნელობას ხელით ვერ ჩავწერთ", "ჩაიწერება Id = 1-ით"]}, {"id": "A6", "text": "რამდენ სტრიქონს დააბრუნებს?", "code": "SELECT p.Name, c.Name\nFROM Products p\nINNER JOIN Categories c ON p.CategoryId = c.Id;", "lang": "sql", "options": ["`3`", "`4`", "`5`", "`6`"]}, {"id": "A7", "text": "რამდენ სტრიქონს დააბრუნებს?", "code": "SELECT p.Name, c.Name\nFROM Products p\nLEFT JOIN Categories c ON p.CategoryId = c.Id;", "lang": "sql", "options": ["`3`", "`4`", "`5`", "`6`"]}, {"id": "A8", "text": "რა ეწერება Tablets-ის გასწვრივ ორ სვეტში?", "code": "SELECT c.Name, COUNT(*) AS A, COUNT(p.Id) AS B\nFROM Categories c\nLEFT JOIN Products p ON p.CategoryId = c.Id\nGROUP BY c.Name;", "lang": "sql", "options": ["`A = 0, B = 0`", "`A = 1, B = 0`", "`A = 1, B = 1`", "`A = NULL, B = NULL`"]}, {"id": "A9", "text": "რამდენ სტრიქონს დააბრუნებს?", "code": "SELECT p.Name, c.Name\nFROM Products p\nLEFT JOIN Categories c ON p.CategoryId = c.Id\nWHERE c.Name <> 'Phones';", "lang": "sql", "options": ["`1`", "`2`", "`3`", "`4`"]}, {"id": "A10", "text": "რამდენ სტრიქონს დააბრუნებს?", "code": "SELECT CategoryId, COUNT(*) AS Cnt\nFROM Products\nGROUP BY CategoryId\nHAVING COUNT(*) > 1;", "lang": "sql", "options": ["`0`", "`1`", "`2`", "`3`"]}, {"id": "A11", "text": "რას დააბრუნებს?", "code": "SELECT COUNT(*)\nFROM Products\nWHERE CategoryId = NULL;", "lang": "sql", "options": ["`1`", "`0`", "`4`", "შეცდომა"]}, {"id": "A12", "text": "მიზანი: მხოლოდ iPhone-ის ფასის შეცვლა. რა პრობლემაა?", "code": "UPDATE Products\nSET Price = 999;", "lang": "sql", "options": ["`UPDATE`-ის ნაცვლად `INSERT` უნდა იყოს", "`WHERE` აკლია: ყველა პროდუქტის ფასი გახდება 999", "`SET` მხოლოდ ტექსტურ სვეტზე მუშაობს", "მოთხოვნა შეცდომას დააგდებს"]}, {"id": "A13", "text": "FK `Products.CategoryId → Categories.Id`, cascade-ის გარეშე. რა მოხდება?", "code": "DELETE FROM Categories WHERE Id = 1;", "lang": "sql", "options": ["კატეგორია წაიშლება, პროდუქტების CategoryId გახდება `NULL`", "კატეგორია და მისი პროდუქტები წაიშლება", "შეცდომა: FK constraint, კატეგორიაზე პროდუქტები მიუთითებენ", "კატეგორია წაიშლება, პროდუქტები უცვლელი დარჩება"]}, {"id": "A14", "text": "რას დააბრუნებს?", "code": "SELECT TOP 2 Name\nFROM Products\nORDER BY Price DESC;", "lang": "sql", "options": ["iPhone, Galaxy", "MacBook, iPhone", "Cable, Galaxy", "iPhone, MacBook"]}, {"id": "A15", "text": "ცხრილში ფასებია: 100, 200, `NULL`. რას დააბრუნებს?", "code": "SELECT AVG(Price) FROM Items;", "lang": "sql", "options": ["`100`", "`150`", "`NULL`", "შეცდომა"]}, {"id": "A16", "text": "რამდენ სტრიქონს დააბრუნებს?", "code": "SELECT DISTINCT CategoryId FROM Products;", "lang": "sql", "options": ["`2`", "`3`", "`4`", "`1`"]}, {"id": "A17", "text": "რამდენ სტრიქონს დააბრუნებს? (კოლაცია ნაგულისხმევია, რეგისტრს არ არჩევს)", "code": "SELECT Name FROM Products WHERE Name LIKE '%a%';", "lang": "sql", "options": ["`1`", "`2`", "`3`", "`4`"]}, {"id": "A18", "text": "რატომ აგდებს შეცდომას?", "code": "SELECT Name, Price * 2 AS Doubled\nFROM Products\nWHERE Doubled > 100;", "lang": "sql", "options": ["`AS` არასწორი სიტყვაა", "`WHERE` `SELECT`-ზე ადრე სრულდება და `Doubled` ფსევდონიმი ჯერ არ არსებობს", "`Price * 2` SQL-ში არ შეიძლება", "`WHERE` რიცხვს ვერ ადარებს"]}, {"id": "A19", "text": "რატომ აგდებს შეცდომას?", "code": "SELECT CategoryId, Name, COUNT(*)\nFROM Products\nGROUP BY CategoryId;", "lang": "sql", "options": ["`COUNT(*)` `GROUP BY`-სთან არ შეიძლება", "`Name` არც `GROUP BY`-შია და არც აგრეგატულ ფუნქციაში: ერთ ჯგუფში რამდენიმე სახელია და SQL-მა არ იცის, რომელი აჩვენოს", "`CategoryId`-ში `NULL`-ია", "`GROUP BY` `WHERE`-ის გარეშე არ მუშაობს"]}, {"id": "A20", "text": "ცხრილი `Orders(Id, CustomerName, CustomerPhone, ProductName, Date)`. ერთ მომხმარებელს 50 შეკვეთა აქვს. რომელი დებულებაა სწორი?", "multi": true, "options": ["მომხმარებლის მონაცემები 50-ჯერ მეორდება", "ტელეფონის შეცვლისას 50 სტრიქონი უნდა განახლდეს, ერთი თუ გამოგრჩა, მონაცემები აირევა", "გამოსავალი: ცალკე `Customers` ცხრილი და `Orders.CustomerId` FK", "გამოსავალი: `CustomerPhone2` სვეტის დამატება"]}, {"id": "A21", "text": "ცხრილში `Students(Id, Name, Phones)` ერთი ჩანაწერია: `(1, 'ანა', '555-11, 599-22')`. რა არის პრობლემა?", "options": ["ტელეფონი რიცხვი უნდა იყოს", "ერთ უჯრაში რამდენიმე მნიშვნელობაა, პირველი ნორმალური ფორმა ირღვევა. ტელეფონები ცალკე ცხრილში უნდა გავიდეს `StudentId` FK-ით", "`Name` უნიკალური უნდა იყოს", "პრობლემა არ არის"]}, {"id": "A22", "text": "მომხმარებელს ერთი პროფილი აქვს, პროფილი ერთ მომხმარებელს ეკუთვნის (1-1). როგორ აიგება?", "options": ["`UserProfiles.UserId` FK + `UNIQUE`", "`UserProfiles.UserId` FK, `UNIQUE`-ის გარეშე", "შუალედური ცხრილი", "კავშირი ბაზაში ვერ აიგება"]}, {"id": "A23", "text": "რამდენ სტრიქონს დააბრუნებს?", "code": "SELECT Name FROM Products\nWHERE Price BETWEEN 1200 AND 1500;", "lang": "sql", "options": ["`0`", "`1`", "`2`", "`3`"]}, {"id": "A24", "text": "ერთ კატეგორიას ბევრი პროდუქტი აქვს (1-N). სად იწერება Foreign Key?", "options": ["`Categories` ცხრილში: `ProductId`", "`Products` ცხრილში: `CategoryId`", "ორივე ცხრილში", "ცალკე მესამე ცხრილში"]}]}, {"id": "B", "title": "EF Core", "note": "ORM, მიგრაციები, CRUD, Change Tracker, კავშირები, Code First / Database First.", "items": [{"id": "B1", "text": "`Add-Migration`-ის გასაშვებად რომელი პაკეტებია საჭირო (EF Core-ის ძრავის გარდა)?", "multi": true, "options": ["`Microsoft.EntityFrameworkCore.Tools`", "`Microsoft.EntityFrameworkCore.Design`", "`Swashbuckle.AspNetCore`", "`Riok.Mapperly`"]}, {"id": "B2", "text": "Package Manager Console-ში: „The term 'Add-Migration' is not recognized“. რა არის მიზეზი?", "options": ["ბაზა არ არსებობს", "`.Tools` პაკეტი არ არის დაყენებული", "connection string არასწორია", "DataContext-ს `DbSet` აკლია"]}, {"id": "B3", "text": "Solution-ში ორი პროექტია. `Add-Migration`-ზე შეცდომაა: „No DbContext was found in assembly“. რა არის მიზეზი?", "options": ["DataContext-ს `DbSet` აკლია", "Package Manager Console-ში Default project სხვა პროექტია არჩეული, და არა ის, სადაც DataContext-ია", "ბაზა არ არსებობს", "`.SqlServer` პაკეტი აკლია"]}, {"id": "B4", "text": "`Add-Migration` წერს: „The entity type 'Book' requires a primary key to be defined“. რა აკლია?", "code": "public class Book\n{\n    public string Title { get; set; } = \"\";\n    public int Pages { get; set; }\n}", "lang": "csharp", "options": ["`DbSet<Book>`", "`public int Id { get; set; }`: EF `Id` სახელის property-ს PK-ად იყენებს", "`[Table]` ატრიბუტი", "constructor"]}, {"id": "B5", "text": "რატომ წერია connection string-ის წინ `@`?", "code": "options.UseSqlServer(@\"Server=(localdb)\\MSSQLLocalDB;Database=ShopDb;Trusted_Connection=True\");", "lang": "csharp", "options": ["`@` connection string-ს შიფრავს", "სტრიქონში `\\` არის და `@`-ის გარეშე C# მას escape სიმბოლოდ (`\\M`) აღიქვამდა", "`@` SQL Server-ის აუცილებელი ნიშანია", "ბაზას ავტომატურად ქმნის"]}, {"id": "B6", "text": "რით განსხვავდება `Add-Migration` და `Update-Database`?", "options": ["`Add-Migration` ბაზას ცვლის, `Update-Database` ფაილს ქმნის", "`Add-Migration` მიგრაციის ფაილს (ნახაზს) ქმნის, `Update-Database` მას ბაზაზე უშვებს", "ორივე ერთსა და იმავეს აკეთებს", "`Update-Database` მხოლოდ Database First-ში გამოიყენება"]}, {"id": "B7", "text": "`Book`-ს დაამატე `Pages`, გაუშვი `Add-Migration AddPages`, მერე პროგრამა. შეცდომაა: „Invalid column name 'Pages'“. რატომ?", "options": ["მიგრაციის სახელი არასწორია", "`Update-Database` არ გაგიშვია: ფაილი შეიქმნა, ბაზაში სვეტი კი არ დამატებულა", "`Pages` SQL-ში დაცული სიტყვაა", "DataContext-ს ახალი `DbSet` სჭირდება"]}, {"id": "B8", "text": "`Update-Database`-ზე შეცდომაა: „The model for context 'DataContext' has pending changes“. რა მოხდა?", "options": ["ბაზა გათიშულია", "კლასი შეცვალე, მაგრამ `Add-Migration` არ გაგიშვია", "მიგრაცია ორჯერ გაეშვა", "`SaveChanges` დაგავიწყდა"]}, {"id": "B9", "text": "`AddPages` მიგრაცია უკვე გაშვებულია ბაზაზე. გინდა მისი გაუქმება. რა თანმიმდევრობაა სწორი?", "options": ["უბრალოდ `Remove-Migration`", "`Update-Database <წინა მიგრაციის სახელი>`, შემდეგ `Remove-Migration`", "მიგრაციის ფაილი ხელით წაშალე", "SSMS-ში სვეტი ხელით წაშალე"]}, {"id": "B10", "text": "Code First პროექტში რატომ არ უნდა შეცვალო ბაზა SSMS-ში ხელით?", "options": ["SSMS-ს ამის უფლება არ აქვს", "Code First-ში ჭეშმარიტების წყარო კოდია. ხელით ცვლილება მიგრაციებს არ ემთხვევა და შემდეგი მიგრაცია ჩავარდება (მაგ. „There is already an object named...“)", "ხელით შეცვლილი ბაზა ნელა მუშაობს", "ასე მონაცემები ავტომატურად წაიშლება"]}, {"id": "B11", "text": "`Product`-ს დაამატე `public int CategoryId` და FK. ცხრილში უკვე იყო პროდუქტები. `Update-Database` ჩავარდა: „ALTER TABLE statement conflicted with the FOREIGN KEY constraint“. რა არის გამოსწორება?", "options": ["კატეგორიების ცხრილის წაშლა", "`int?` (nullable): ძველ პროდუქტებს `NULL` ეწერება, შემდეგ `Remove-Migration` და თავიდან `Add-Migration`", "`Update-Database`-ის ხელახლა გაშვება", "პროდუქტების ხელით წაშლა SSMS-ში"]}, {"id": "B12", "text": "პროგრამამ დაბეჭდა „დამატებულია!“, ცხრილი კი ცარიელია. რატომ?", "code": "using var db = new DataContext();\n\nvar book = new Book { Title = \"ვეფხისტყაოსანი\", Pages = 300 };\ndb.Books.Add(book);\n\nConsole.WriteLine(\"დამატებულია!\");", "lang": "csharp", "options": ["`Add`-ის ნაცვლად `Insert` უნდა იყოს", "`SaveChanges()` არ არის გამოძახებული", "`Id` ხელით უნდა მიენიჭოს", "`using` ზედმეტია"]}, {"id": "B13", "text": "რომელი დებულებაა სწორი?", "multi": true, "options": ["`Find(id)` ჯერ Change Tracker-ში ეძებს და მხოლოდ მერე მიდის ბაზაში", "`First(...)` ჩანაწერის ვერ პოვნისას შეცდომას აგდებს", "`FirstOrDefault(...)` ჩანაწერის ვერ პოვნისას `null`-ს აბრუნებს", "`Find`-ით ნებისმიერი სვეტით ძებნა შეიძლება, მაგ. `Find(\"iPhone\")`"]}, {"id": "B14", "text": "რა მდგომარეობაშია ობიექტი Change Tracker-ში (1) `Find`-ის შემდეგ და (2) ფასის შეცვლის შემდეგ?", "code": "var p = db.Products.Find(1);   // (1)\np.Price = 1400;                 // (2)", "lang": "csharp", "options": ["(1) Added · (2) Modified", "(1) Unchanged · (2) Modified", "(1) Detached · (2) Unchanged", "(1) Unchanged · (2) Unchanged: `Update()` სჭირდება"]}, {"id": "B15", "text": "ბაზაში ფასი 1500-ია. რას დაბეჭდავს?", "code": "var a = db.Products.Find(1);\na.Price = 99;\n\nvar b = db.Products.Find(1);\nConsole.WriteLine(b.Price);", "lang": "csharp", "options": ["`1500`", "`99`", "`0`", "შეცდომა"]}, {"id": "B16", "text": "რა ფასი ჩაიწერება ბაზაში?", "code": "var p = new Product { Name = \"Mouse\", Price = 10 };\ndb.Products.Add(p);\n\np.Price = 20;\n\ndb.SaveChanges();", "lang": "csharp", "options": ["`10`", "`20`", "ორი სტრიქონი: 10 და 20", "შეცდომა: Add-ის შემდეგ შეცვლა არ შეიძლება"]}, {"id": "B17", "text": "ბაზაში ფასი 1500-ია. რას დაბეჭდავს?", "code": "var p = db.Products.Find(1);\n\ndb.Products\n  .Where(x => x.Id == 1)\n  .ExecuteUpdate(s => s.SetProperty(x => x.Price, 1700));\n\nConsole.WriteLine(p.Price);", "lang": "csharp", "options": ["`1700`", "`1500`", "`0`", "შეცდომა"]}, {"id": "B18", "text": "რომელი დებულებაა სწორი?", "code": "db.TodoItems\n  .Where(t => t.IsDone)\n  .ExecuteDelete();", "lang": "csharp", "multi": true, "options": ["ბაზაში ერთი `DELETE ... WHERE IsDone = 1` იგზავნება", "`SaveChanges()` საჭირო არ არის", "ჯერ ყველა ჩანაწერი მეხსიერებაში იტვირთება, მერე იშლება", "თითო ჩანაწერზე `Remove()` უნდა გამოვიძახოთ"]}, {"id": "B19", "text": "რომელ SQL-ს აგზავნის EF და როდის?", "code": "var list = db.Products\n    .Where(p => p.Price > 100)\n    .OrderBy(p => p.Name)\n    .ToList();", "lang": "csharp", "options": ["`SELECT * FROM Products`, ფილტრი და დალაგება კი C#-ში მეხსიერებაში", "ერთ `SELECT ... WHERE Price > 100 ORDER BY Name`-ს, `ToList()`-ის გამოძახებისას", "ორ ცალკე მოთხოვნას: ერთს `Where`-ზე, მეორეს `OrderBy`-ზე", "SQL არ იგზავნება, სანამ `foreach` არ დაიწყება"]}, {"id": "B20", "text": "`Product`-ს აქვს `public Category? Category { get; set; }`. რა მოხდება?", "code": "var products = db.Products.ToList();\n\nforeach (var p in products)\n    Console.WriteLine(p.Category.Name);", "lang": "csharp", "options": ["კატეგორიის სახელები დაიბეჭდება", "`NullReferenceException`: `Category` არ ჩაიტვირთა, საჭიროა `.Include(p => p.Category)`", "EF ყოველ იტერაციაზე ავტომატურად წაიკითხავს კატეგორიას", "კომპილაციის შეცდომა"]}, {"id": "B21", "text": "რა მოხდება `SaveChanges()`-ზე?", "code": "var tech = new Category { Name = \"ტექნიკა\" };\ntech.Products.Add(new Product { Name = \"კლავიატურა\", Price = 120 });\n\ndb.Categories.Add(tech);\ndb.SaveChanges();", "lang": "csharp", "options": ["ჩაიწერება მხოლოდ კატეგორია", "ჩაიწერება კატეგორიაც და პროდუქტიც, პროდუქტის `CategoryId`-ს EF თავად ჩაწერს", "შეცდომა: პროდუქტის `CategoryId` = 0", "პროდუქტისთვის ცალკე `db.Products.Add` სჭირდება"]}, {"id": "B22", "text": "რა არის ჭეშმარიტების წყარო Code First-ში და Database First-ში?", "options": ["ორივეში ბაზა", "Code First: C# კლასები · Database First: ბაზა", "Code First: ბაზა · Database First: C# კლასები", "ორივეში მიგრაციის ფაილები"]}, {"id": "B23", "text": "ახალ სამსახურში 15 წლის ბაზაა, რომელსაც 5 სხვა პროგრამა იყენებს. მას DBA მართავს. რომელ მიდგომას აირჩევ?", "options": ["Code First: მიგრაციით ბაზას თავიდან შევქმნით", "Database First: `Scaffold-DbContext`-ით კლასებს არსებული ბაზიდან დავაგენერირებთ", "Code First, `Update-Database`-ით ძველ ბაზაზე", "EF Core აქ ვერ გამოიყენება"]}, {"id": "B24", "text": "Scaffold-ით შექმნილ `Product`-ს დაუმატე `Label` property. ბაზა შეიცვალა, გაუშვი `Scaffold-DbContext ... -Force` და `Label` გაქრა. როგორ ავიცილოთ თავიდან?", "options": ["`-Force`-ის გარეშე გაშვება", "საკუთარი კოდი ცალკე ფაილში, `partial class Product`-ში, იგივე namespace-ით", "გენერირებული ფაილის `readonly`-დ მონიშვნა", "`Add-Migration`-ის გამოყენება"]}, {"id": "B25", "text": "`Scaffold-DbContext` წერს „Build failed.“, თუმცა ბაზა და connection string სწორია. რატომ?", "options": ["ბაზა ცარიელია", "Scaffold ჯერ პროექტს აბილდებს: კოდში კომპილაციის შეცდომაა (იხილე Error List)", "`-Force` აკლია", "`.SqlServer` პაკეტი ზედმეტია"]}, {"id": "B26", "text": "რომელი დებულებაა სწორი Database First-ზე?", "multi": true, "options": ["`Add-Migration`/`Update-Database` არ ვიყენებთ, Migrations ფოლდერი არ არის", "ბაზის ცვლილების შემდეგ Scaffold-ს ვუშვებთ `-Force`-ით", "ბაზას `Update-Database`-ით ვქმნით", "Entity კლასებს ხელით ვწერთ, ცხრილების მიხედვით"]}]}];
+const POINTS = 2;
+const DURATION_MIN = 120;
+const K = "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";
+const S = "le-bd3e81690ffe";
+const LETTERS = ['ა', 'ბ', 'გ', 'დ'];
+const STORE_KEY = 'exam:' + location.pathname;
+
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const inline = s => esc(s).replace(/`([^`]+)`/g, '<code class="inline">$1</code>');
+const pad = n => String(n).padStart(2, '0');
+const fmtPts = n => (Math.round(n * 100) / 100).toString();
+const QUESTIONS = EXAM.flatMap(s => s.items.map(q => ({ ...q, sec: s.id })));
+const MAX = QUESTIONS.length * POINTS;
+
+/* ---------- highlight ---------- */
+const KW = {
+  text: /(?!)/g,
+  csharp: /(\/\/[^\n]*)|(\$?"(?:[^"\\\n]|\\.)*")|(\b\d+(?:\.\d+)?\b)|\b(int|double|decimal|string|bool|void|static|return|if|else|for|foreach|in|while|new|true|false|var|public|private|readonly|class|record|partial|this|null|is|get|set)\b|\b(Console|List|Guid|Action|Func|IActionResult|ControllerBase|DataContext|Product|ProductResponse|Counter)\b|(\[[A-Za-z]+(?:\("[^"]*"\))?\])/g,
+  sql: /(--[^\n]*)|('(?:[^'\\\n]|\\.)*')|(\b\d+\b)|\b(SELECT|FROM|WHERE|INNER|LEFT|JOIN|ON|GROUP|BY|ORDER|AS|UPDATE|SET|DELETE|INSERT|INTO|VALUES|COUNT|NULL|AND|OR)\b()()/gi,
+};
+function highlight(src, lang) {
+  const re = new RegExp(KW[lang] || KW.csharp);
+  let out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    if (!m[0]) { re.lastIndex++; continue; }
+    out += esc(src.slice(last, m.index));
+    const cls = m[1] ? 'c' : m[2] ? 's' : m[3] ? 'n' : m[4] ? 'k' : m[5] ? 't' : 'a';
+    out += `<span class="${cls}">${esc(m[0])}</span>`;
+    last = re.lastIndex;
+  }
+  out += esc(src.slice(last));
+  return out.split('\n').map(l => `<span class="line">${l || ' '}</span>`).join('');
+}
+const codeBlock = (src, lang) => `<pre class="code">${highlight(src, lang)}</pre>`;
+
+/* ---------- state ---------- */
+let state = { meta: { first: '', last: '', group: '' }, answers: {}, order: {}, start: null, finished: null };
+try { const saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); if (saved) state = Object.assign(state, saved); } catch (e) {}
+if (!state.start) state.start = Date.now();
+for (const q of QUESTIONS) {
+  if (!Array.isArray(state.order[q.id]) || state.order[q.id].length !== q.options.length) {
+    const p = q.options.map((_, i) => i);
+    for (let i = p.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; }
+    state.order[q.id] = p;
+  }
+}
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
+save();
+
+/* ---------- render exam ---------- */
+function renderExam() {
+  $('#qCount').textContent = QUESTIONS.length;
+  $('#maxPts').textContent = fmtPts(MAX);
+  $('#exam').innerHTML = EXAM.map(sec => `
+    <section class="section">
+      <div class="section-head"><h2><span class="sec-letter">${sec.id}</span>${esc(sec.title)}</h2>
+        <span class="section-pts">${fmtPts(sec.items.length * POINTS)} ქულა</span></div>
+      <p class="section-note">${inline(sec.note)}</p>
+      ${sec.items.map(q => {
+        const type = q.multi ? 'checkbox' : 'radio';
+        return `<article class="q" id="q-${q.id}">
+          <div class="q-head"><span class="qid">${q.id}</span><span class="qpts">${fmtPts(POINTS)} ქულა</span>
+            ${q.multi ? '<span class="badge">შესაძლოა რამდენიმე სწორი პასუხი</span>' : ''}</div>
+          ${q.text ? `<p class="qtext">${inline(q.text)}</p>` : ''}
+          ${q.code ? codeBlock(q.code, q.lang) : ''}
+          <div class="opts">${state.order[q.id].map((orig, pos) => `
+            <label class="opt ${q.multi ? 'check' : 'radio'}">
+              <input type="${type}" name="${q.id}" value="${orig}">
+              <span class="letter">${LETTERS[pos]}</span><span class="otext">${inline(q.options[orig])}</span>
+            </label>`).join('')}</div>
+        </article>`;
+      }).join('')}
+    </section>`).join('');
+}
+
+function restore() {
+  $('#fFirst').value = state.meta.first || '';
+  $('#fLast').value = state.meta.last || '';
+  $('#fGroup').value = state.meta.group || '';
+  for (const [qid, vals] of Object.entries(state.answers))
+    vals.forEach(v => { const i = document.querySelector(`input[name="${qid}"][value="${v}"]`); if (i) i.checked = true; });
+  syncOptionClasses(); updateProgress();
+}
+function syncOptionClasses() {
+  document.querySelectorAll('.opt').forEach(l => l.classList.toggle('checked', l.querySelector('input').checked));
+}
+const answeredCount = () => QUESTIONS.filter(q => (state.answers[q.id] || []).length).length;
+function updateProgress() {
+  if (state.finished) return;
+  $('#progress').textContent = `${answeredCount()} / ${QUESTIONS.length}`;
+}
+
+document.addEventListener('change', e => {
+  const inp = e.target;
+  if (state.finished || !inp.matches('.opt input')) return;
+  state.answers[inp.name] = [...document.querySelectorAll(`input[name="${inp.name}"]:checked`)].map(i => +i.value);
+  syncOptionClasses(); updateProgress(); save();
+});
+document.addEventListener('input', e => {
+  const map = { fFirst: 'first', fLast: 'last', fGroup: 'group' };
+  const k = map[e.target.id]; if (!k || state.finished) return;
+  state.meta[k] = e.target.value; e.target.classList.remove('invalid'); save();
+});
+
+/* ---------- grading ---------- */
+function decodeKey() {
+  const raw = atob(K), sb = new TextEncoder().encode(S), bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) ^ sb[i % sb.length];
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+function grade() {
+  const key = decodeKey();
+  return QUESTIONS.map(q => {
+    const correct = key[q.id].a, picked = state.answers[q.id] || [];
+    let frac;
+    if (!q.multi) frac = picked.length === 1 && picked[0] === correct[0] ? 1 : 0;
+    else {
+      const hits = picked.filter(p => correct.includes(p)).length, wrong = picked.length - hits;
+      frac = Math.max(0, (hits - wrong) / correct.length);
+    }
+    const status = !picked.length ? 'empty' : frac === 1 ? 'ok' : frac > 0 ? 'partial' : 'wrong';
+    return { id: q.id, sec: q.sec, picked, correct, why: key[q.id].why, pts: POINTS * frac, status };
+  });
+}
+
+/* ---------- results ---------- */
+const STATUS = { wrong: 'არასწორი', partial: 'ნაწილობრივ', empty: 'პასუხის გარეშე' };
+function renderResults() {
+  const r = state.finished.results;
+  const total = r.reduce((a, x) => a + x.pts, 0);
+  const pct = Math.round(total / MAX * 100);
+  const okCount = r.filter(x => x.status === 'ok').length;
+  const bySec = EXAM.map(s => {
+    const xs = r.filter(x => x.sec === s.id), got = xs.reduce((a, x) => a + x.pts, 0), max = xs.length * POINTS;
+    return `<tr><td><b>${s.id}</b> · ${esc(s.title)}</td><td style="width:40%"><div class="bar"><i style="width:${Math.round(got / max * 100)}%"></i></div></td>
+      <td>${fmtPts(got)} / ${fmtPts(max)}</td></tr>`;
+  }).join('');
+
+  const bad = r.filter(x => x.status !== 'ok');
+  const qById = Object.fromEntries(QUESTIONS.map(q => [q.id, q]));
+  const review = bad.map(x => {
+    const q = qById[x.id];
+    const items = state.order[q.id].map((orig, pos) => {
+      const isC = x.correct.includes(orig), isP = x.picked.includes(orig);
+      const cls = isC ? 'correct' : isP ? 'picked-wrong' : '';
+      const mk = isC ? '✓' : isP ? '✗' : '';
+      return `<li class="${cls}"><span class="mk">${mk}</span><span><b>${LETTERS[pos]}.</b> ${inline(q.options[orig])}</span>${isP ? '<span class="you">შენი პასუხი</span>' : ''}</li>`;
+    }).join('');
+    return `<article class="rv">
+      <div class="q-head"><span class="qid">${q.id}</span><span class="rv-status ${x.status}">${STATUS[x.status]}</span>
+        <span class="qpts">${fmtPts(x.pts)} / ${fmtPts(POINTS)} ქულა</span></div>
+      ${q.text ? `<p class="qtext">${inline(q.text)}</p>` : ''}
+      ${q.code ? codeBlock(q.code, q.lang) : ''}
+      <ul class="rv-list">${items}</ul>
+      <div class="why"><b>რატომ:</b> ${inline(x.why)}</div>
+    </article>`;
+  }).join('');
+
+  $('#results').innerHTML = `
+    <div class="score-card">
+      <div><div class="score-big">${fmtPts(total)}<small> / ${fmtPts(MAX)}</small></div>
+        <div class="score-sub">${pct}% · სწორი ${okCount} / ${r.length}</div></div>
+      <table class="breakdown">${bySec}</table>
+    </div>
+    <div class="res-actions"><button class="btn" id="pdfAgain" type="button">PDF-ად გადმოწერა</button></div>
+    ${bad.length ? `<section class="section"><div class="section-head"><h2>შეცდომების განხილვა</h2><span class="section-pts">${bad.length} კითხვა</span></div>${review}</section>` : ''}
+    <section class="section"><div class="section-head"><h2>სწორად უპასუხე</h2><span class="section-pts">${okCount} კითხვა</span></div>
+      <div class="ok-chips">${r.filter(x => x.status === 'ok').map(x => `<span>${x.id}</span>`).join('') || '—'}</div></section>`;
+  $('#pdfAgain').addEventListener('click', exportPdf);
+
+  document.body.classList.add('done');
+  document.querySelectorAll('.field input').forEach(i => i.disabled = true);
+  $('#timerLabel').textContent = 'ქულა';
+  $('#timer').textContent = `${fmtPts(total)}/${fmtPts(MAX)}`;
+  $('#timer').classList.remove('over');
+  $('#progLabel').textContent = 'სწორი';
+  $('#progress').textContent = `${okCount} / ${r.length}`;
+  $('#finishTop').textContent = 'PDF-ად გადმოწერა';
+  fillPrintMeta();
+}
+
+/* ---------- finish flow ---------- */
+function validateStudent() {
+  const fields = [['fFirst', 'first'], ['fLast', 'last'], ['fGroup', 'group']];
+  const missing = fields.filter(([, k]) => !(state.meta[k] || '').trim());
+  fields.forEach(([id]) => $('#' + id).classList.remove('invalid'));
+  if (!missing.length) { $('#studentError').textContent = ''; return true; }
+  missing.forEach(([id]) => $('#' + id).classList.add('invalid'));
+  $('#studentError').textContent = 'შეავსე სახელი, გვარი და ჯგუფი.';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  $('#' + missing[0][0]).focus();
+  return false;
+}
+function askFinish() {
+  if (state.finished) return exportPdf();
+  if (!validateStudent()) return;
+  const left = QUESTIONS.length - answeredCount();
+  $('#modalText').innerHTML = left
+    ? `<b style="color:var(--bad)">${left} კითხვა უპასუხოა.</b> დასრულების შემდეგ პასუხებს ვეღარ შეცვლი.`
+    : 'ყველა კითხვას უპასუხე. დასრულების შემდეგ პასუხებს ვეღარ შეცვლი.';
+  $('#modal').classList.add('on');
+}
+$('#modalNo').addEventListener('click', () => $('#modal').classList.remove('on'));
+$('#modalYes').addEventListener('click', () => {
+  $('#modal').classList.remove('on');
+  state.finished = { at: Date.now(), results: grade() };
+  save();
+  renderResults();
+  window.scrollTo({ top: 0 });
+  setTimeout(exportPdf, 350);
+});
+$('#finishBtn').addEventListener('click', askFinish);
+$('#finishTop').addEventListener('click', askFinish);
+
+/* ---------- PDF ---------- */
+const fmt = d => `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function fillPrintMeta() {
+  const end = state.finished ? new Date(state.finished.at) : new Date();
+  $('#printMeta').innerHTML =
+    `<span>დაწყება: <b>${fmt(new Date(state.start))}</b></span><span>დასრულება: <b>${fmt(end)}</b></span>` +
+    `<span>დახარჯული დრო: <b>${Math.round((end - state.start) / 60000)} წთ</b></span>`;
+}
+let originalTitle = document.title;
+function exportPdf() {
+  fillPrintMeta();
+  originalTitle = document.title;
+  document.title = `EF_SQL_${state.meta.last}_${state.meta.first}_${state.meta.group}`.replace(/\s+/g, '_');
+  window.print();
+}
+window.addEventListener('afterprint', () => { document.title = originalTitle; });
+
+/* ---------- კოპირების დაბლოკვა ---------- */
+const isEditable = t => { const n = t && t.nodeType === 3 ? t.parentElement : t; return !!(n && n.closest && n.closest('input')); };
+let toastTimer;
+function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 1800); }
+['copy', 'cut'].forEach(ev => document.addEventListener(ev, e => { if (!isEditable(e.target)) { e.preventDefault(); toast('კოპირება გამორთულია'); } }));
+document.addEventListener('contextmenu', e => { if (!isEditable(e.target)) e.preventDefault(); });
+document.addEventListener('selectstart', e => { if (!isEditable(e.target)) e.preventDefault(); });
+document.addEventListener('dragstart', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  const k = (e.key || '').toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && ['c', 'x', 'a', 's', 'u'].includes(k) && !isEditable(e.target)) { e.preventDefault(); if (k === 'c' || k === 'x') toast('კოპირება გამორთულია'); }
+  if (e.key === 'F12') e.preventDefault();
+});
+
+/* ---------- timer ---------- */
+function tick() {
+  if (state.finished) return;
+  const left = Math.round((state.start + DURATION_MIN * 60000 - Date.now()) / 1000), el = $('#timer');
+  if (left >= 0) { el.textContent = `${pad(Math.floor(left / 60))}:${pad(left % 60)}`; el.classList.remove('over'); }
+  else { const o = -left; el.textContent = `+${pad(Math.floor(o / 60))}:${pad(o % 60)}`; el.classList.add('over'); }
+}
+setInterval(tick, 1000); tick();
+
+/* ---------- init ---------- */
+renderExam();
+restore();
+if (state.finished) renderResults();
+</script>
+</body>
+</html>
