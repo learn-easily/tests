@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web API — სწრაფი ტესტი (რთული)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1d23; --muted: #5d6573; --faint: #8a919e;
+    --bg: #eceef2; --paper: #fff; --line: #dde1e7;
+    --accent: #3346c4; --accent-soft: #eef0fc;
+    --ok: #15803d; --ok-soft: #ecfdf3; --bad: #b42318; --bad-soft: #fef3f2; --part: #b54708; --part-soft: #fffaeb;
+    --code-bg: #f6f8fa;
+    --sans: "Noto Sans Georgian", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: var(--sans); color: var(--ink); background: var(--bg); line-height: 1.55; -webkit-user-select: none; user-select: none; }
+  input { -webkit-user-select: text; user-select: text; }
+
+  .toolbar { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.94); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+  .toolbar-inner { max-width: 880px; margin: 0 auto; padding: 10px 24px; display: flex; align-items: center; gap: 20px; }
+  .tb-back { font-size: 20px; color: var(--muted); text-decoration: none; padding: 2px 6px; border-radius: 6px; }
+  .tb-back:hover { color: var(--ink); background: var(--bg); }
+  .tb-item { display: flex; flex-direction: column; line-height: 1.2; }
+  .tb-label { font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; }
+  .tb-value { font-family: var(--mono); font-weight: 600; font-size: 17px; }
+  .tb-value.over { color: var(--bad); }
+  .tb-spacer { flex: 1; }
+  .btn { font-family: var(--sans); font-size: 14px; font-weight: 600; border: 0; border-radius: 8px; padding: 10px 18px; cursor: pointer; background: var(--accent); color: #fff; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+  .btn.finish-btn { background: var(--ink); }
+
+  .paper { max-width: 880px; margin: 28px auto 60px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 48px 56px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.04); }
+  .exam-head { border-bottom: 2px solid var(--ink); padding-bottom: 20px; margin-bottom: 8px; }
+  .eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  h1 { font-size: 28px; margin: 6px 0 4px; line-height: 1.25; }
+  .exam-meta { color: var(--muted); font-size: 14px; display: flex; gap: 18px; flex-wrap: wrap; }
+  .student { display: grid; grid-template-columns: 1fr 1fr 160px; gap: 14px; margin: 22px 0 6px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+  .field input { width: 100%; font-family: var(--sans); font-size: 15px; border: 0; border-bottom: 1.5px solid var(--ink); padding: 6px 2px; outline: none; background: transparent; }
+  .field input:focus { border-bottom-color: var(--accent); }
+  .field input.invalid { border-bottom-color: var(--bad); background: var(--bad-soft); }
+  .field input:disabled { color: var(--ink); -webkit-text-fill-color: var(--ink); }
+  .student-error { color: var(--bad); font-size: 13px; min-height: 18px; }
+  .print-meta { display: none; }
+  .rules { background: #f7f8fa; border: 1px solid var(--line); border-radius: 6px; padding: 14px 18px; font-size: 14px; color: #333a45; margin-top: 10px; }
+  .rules ol { margin: 6px 0 0; padding-left: 20px; } .rules li { margin: 2px 0; }
+
+  .section { margin-top: 44px; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid var(--ink); padding-bottom: 6px; margin-bottom: 6px; }
+  .section-head h2 { font-size: 20px; margin: 0; }
+  .section-head h2 .sec-letter { color: var(--accent); margin-right: 6px; }
+  .section-pts { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .section-note { font-size: 14px; color: var(--muted); margin: 6px 0 14px; }
+
+  .q { padding: 20px 0; border-bottom: 1px dashed var(--line); break-inside: avoid; page-break-inside: avoid; }
+  .q:last-child { border-bottom: 0; }
+  .q-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .qid { font-family: var(--mono); font-weight: 600; font-size: 13px; background: var(--ink); color: #fff; border-radius: 4px; padding: 2px 8px; }
+  .qpts { font-size: 12px; color: var(--faint); }
+  .badge { font-size: 11.5px; font-weight: 600; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 2px 10px; }
+  .qtext { margin: 0 0 10px; font-size: 15.5px; }
+  code.inline { font-family: var(--mono); font-size: .88em; background: var(--code-bg); border: 1px solid #e6e9ee; border-radius: 4px; padding: 1px 5px; }
+
+  pre.code { margin: 6px 0 14px; background: var(--code-bg); border: 1px solid #e3e7ec; border-radius: 6px; padding: 12px 0; overflow-x: auto;
+    font-family: var(--mono); font-size: 13.5px; line-height: 1.6; counter-reset: ln; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  pre.code .line { display: block; padding: 0 16px 0 0; white-space: pre; }
+  pre.code .line::before { counter-increment: ln; content: counter(ln); display: inline-block; width: 36px; margin-right: 14px; text-align: right;
+    color: #b3b9c3; border-right: 1px solid #e3e7ec; padding-right: 8px; }
+  .k { color: #0033b3; font-weight: 600; } .s { color: #067d17; } .n { color: #1750eb; } .c { color: #8c8c8c; font-style: italic; } .t { color: #00627a; } .a { color: #9e880d; }
+
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .opt { display: flex; align-items: flex-start; gap: 10px; border: 1.5px solid var(--line); border-radius: 8px; padding: 9px 12px; cursor: pointer;
+    transition: border-color .12s, background .12s; font-size: 14.5px; }
+  .opt:hover { border-color: #b8bfca; }
+  .opt input { position: absolute; opacity: 0; pointer-events: none; }
+  .letter { flex: none; width: 24px; height: 24px; border: 1.5px solid #b8bfca; display: grid; place-items: center; font-weight: 600; font-size: 13px; color: var(--muted); }
+  .opt.radio .letter { border-radius: 50%; } .opt.check .letter { border-radius: 5px; }
+  .opt.checked { border-color: var(--accent); background: var(--accent-soft); }
+  .opt.checked .letter { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .otext { padding-top: 1px; }
+
+  .finish { margin-top: 48px; padding-top: 24px; border-top: 2px solid var(--ink); display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .finish p { margin: 0; color: var(--muted); font-size: 14px; max-width: 520px; }
+
+  /* ---------- results ---------- */
+  #results { display: none; }
+  body.done #results { display: block; }
+  body.done #exam, body.done .finish, body.done .rules { display: none; }
+  .score-card { margin-top: 28px; display: grid; grid-template-columns: 220px 1fr; gap: 28px; align-items: center;
+    border: 1.5px solid var(--ink); border-radius: 10px; padding: 24px 28px; }
+  .score-big { font-family: var(--mono); font-weight: 700; font-size: 52px; line-height: 1; }
+  .score-big small { font-size: 20px; color: var(--muted); font-weight: 600; }
+  .score-sub { color: var(--muted); font-size: 14px; margin-top: 8px; }
+  .breakdown { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .breakdown td { padding: 6px 4px; border-bottom: 1px solid var(--line); }
+  .breakdown td:last-child { text-align: right; white-space: nowrap; font-family: var(--mono); font-weight: 600; }
+  .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; min-width: 80px; }
+  .bar i { display: block; height: 100%; background: var(--accent); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .res-actions { display: flex; gap: 10px; margin-top: 18px; }
+
+  .rv { padding: 18px 0; border-bottom: 1px dashed var(--line); break-inside: avoid; page-break-inside: avoid; }
+  .rv-status { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 2px 10px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rv-status.wrong { color: var(--bad); background: var(--bad-soft); }
+  .rv-status.partial { color: var(--part); background: var(--part-soft); }
+  .rv-status.empty { color: var(--muted); background: #f2f4f7; }
+  .rv-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+  .rv-list li { display: flex; gap: 10px; align-items: flex-start; border: 1.5px solid var(--line); border-radius: 8px; padding: 7px 12px; font-size: 14.5px;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rv-list li .mk { flex: none; width: 20px; font-weight: 700; text-align: center; }
+  .rv-list li.correct { border-color: var(--ok); background: var(--ok-soft); }
+  .rv-list li.correct .mk { color: var(--ok); }
+  .rv-list li.picked-wrong { border-color: var(--bad); background: var(--bad-soft); }
+  .rv-list li.picked-wrong .mk { color: var(--bad); }
+  .rv-list li .you { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; font-weight: 600; }
+  .why { margin-top: 10px; background: #f7f8fa; border-left: 3px solid var(--accent); padding: 10px 14px; font-size: 14.5px; border-radius: 0 6px 6px 0;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .why b { color: var(--accent); }
+  .ok-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .ok-chips span { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--ok); background: var(--ok-soft); border: 1px solid #abefc6; border-radius: 6px; padding: 2px 8px;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  .modal { position: fixed; inset: 0; background: rgba(16,24,40,.45); display: none; place-items: center; z-index: 60; padding: 20px; }
+  .modal.on { display: grid; }
+  .modal-box { background: #fff; border-radius: 12px; padding: 26px 28px; max-width: 440px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,.2); }
+  .modal-box h3 { margin: 0 0 8px; font-size: 19px; }
+  .modal-box p { margin: 0 0 18px; color: var(--muted); font-size: 14.5px; }
+  .modal-box .row { display: flex; gap: 10px; justify-content: flex-end; }
+
+  .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px); background: var(--ink); color: #fff; font-size: 14px; padding: 10px 18px;
+    border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 70; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 720px) {
+    .paper { padding: 28px 20px; margin: 0; border-radius: 0; }
+    .student, .opts, .score-card { grid-template-columns: 1fr; }
+  }
+
+  @page { size: A4; margin: 14mm 14mm 16mm; }
+  @media print {
+    body { background: #fff; }
+    .toolbar, .rules, .finish, .toast, .student-error, .modal, .res-actions { display: none !important; }
+    .paper { margin: 0; padding: 0; border: 0; box-shadow: none; max-width: none; }
+    .print-meta { display: flex; gap: 22px; flex-wrap: wrap; font-size: 12px; color: #333; margin-top: 10px; }
+    .section { margin-top: 26px; } .section-head { break-after: avoid; }
+    .q, .rv { padding: 12px 0; }
+    .field input { border-bottom: 1px solid #000; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <a class="tb-back" href="../../" title="ყველა ტესტი">←</a>
+    <div class="tb-item"><span class="tb-label" id="timerLabel">დარჩენილი დრო</span><span class="tb-value" id="timer">--:--</span></div>
+    <div class="tb-item"><span class="tb-label" id="progLabel">პასუხი</span><span class="tb-value" id="progress">0 / 0</span></div>
+    <div class="tb-spacer"></div>
+    <button class="btn finish-btn" id="finishTop" type="button">დასრულება</button>
+  </div>
+</div>
+
+<main class="paper">
+  <header class="exam-head">
+    <div class="eyebrow">სწრაფი ტესტი · რთული დონე</div>
+    <h1>ASP.NET Core Web API — სწრაფი ტესტი</h1>
+    <div class="exam-meta"><span>REST · Controllers · Routing · DTO და Mapping · Dependency Injection · Lifetimes</span></div>
+    <div class="exam-meta" style="margin-top:4px">
+      <span>⏱ 30 წუთი</span><span><b id="qCount"></b> კითხვა</span><span>მაქსიმუმი: <b id="maxPts"></b> ქულა</span>
+    </div>
+    <div class="student">
+      <div class="field"><label for="fFirst">სახელი</label><input id="fFirst" autocomplete="off"></div>
+      <div class="field"><label for="fLast">გვარი</label><input id="fLast" autocomplete="off"></div>
+      <div class="field"><label for="fGroup">ჯგუფი</label><input id="fGroup" autocomplete="off"></div>
+    </div>
+    <div class="student-error" id="studentError"></div>
+    <div class="print-meta" id="printMeta"></div>
+    <div class="rules">
+      <b>ინსტრუქცია</b>
+      <ol>
+        <li>ყველა კითხვას 4 სავარაუდო პასუხი აქვს. სადაც წერია <b>„შესაძლოა რამდენიმე სწორი პასუხი“</b>, მონიშნე ყველა სწორი.</li>
+        <li>რამდენიმე სწორპასუხიან კითხვაზე ყოველი სწორი მონიშვნა ქულას მატებს, ყოველი არასწორი კი აკლებს (მინიმუმ 0).</li>
+        <li>პასუხები ავტომატურად ინახება, გვერდის განახლებისას არ დაიკარგება.</li>
+        <li>ბოლოს დააჭირე <b>„დასრულება“</b>. ამის შემდეგ პასუხებს ვეღარ შეცვლი. ნახავ ქულას და შეცდომების ახსნას, PDF კი ავტომატურად გაიხსნება: აირჩიე <b>Save as PDF</b> და ფაილი ატვირთე.</li>
+      </ol>
+    </div>
+  </header>
+
+  <section id="results"></section>
+  <div id="exam"></div>
+
+  <div class="finish">
+    <p>დარწმუნდი, რომ სახელი, გვარი და ჯგუფი შევსებულია და ყველა კითხვას უპასუხე. დასრულების შემდეგ პასუხებს ვეღარ შეცვლი.</p>
+    <button class="btn finish-btn" id="finishBtn" type="button">დასრულება</button>
+  </div>
+</main>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3>დავასრულოთ ტესტი?</h3>
+    <p id="modalText"></p>
+    <div class="row">
+      <button class="btn ghost" id="modalNo" type="button">დაბრუნება</button>
+      <button class="btn finish-btn" id="modalYes" type="button">დასრულება</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const EXAM = [{"id": "A", "title": "ASP.NET Core Web API", "note": "20 კითხვა · 30 წუთი. ყურადღებით წაიკითხე კოდი.", "items": [{"id": "A1", "text": "ბაზამდე პროდუქტები `private static List<Product>`-ში ინახებოდა (3 საწყისით). POST-ით 2 დაამატე, მერე აპი Visual Studio-დან გადატვირთე. რამდენს დააბრუნებს GET?", "options": ["`5`", "`3`", "`0`", "`2`"]}, {"id": "A2", "text": "ორ სხვადასხვა Controller-ს აქვს `[Route(\"api/products\")]` და თითოში `[HttpGet]` მეთოდი. რა მოხდება `GET /api/products`-ზე?", "options": ["გამოიძახება ის, რომელიც პირველად დაიწერა", "გამოიძახება ორივე და პასუხები გაერთიანდება", "500: `AmbiguousMatchException`, ერთ მისამართს ორი action ემთხვევა", "404"]}, {"id": "A3", "text": "`GET /api/products/search` (`ProductsController`, `[Route(\"api/[controller]\")]`). რომელი მეთოდი გამოიძახება?", "code": "[HttpGet(\"{id}\")]\npublic IActionResult GetById(string id) { ... }\n\n[HttpGet(\"search\")]\npublic IActionResult Search() { ... }", "lang": "csharp", "options": ["`GetById`, `id = \"search\"`", "`Search`: ზუსტი ტექსტი (`search`) პარამეტრზე (`{id}`) მაღლა დგას", "500: `AmbiguousMatchException`", "404"]}, {"id": "A4", "text": "რა სტატუს კოდს მიიღებს კლიენტი წარმატებული წაშლისას?", "code": "[HttpDelete(\"{id}\")]\npublic IActionResult Delete(Guid id)\n{\n    var product = _db.Products.Find(id);\n    if (product is null) return NotFound();\n\n    _db.Products.Remove(product);\n    _db.SaveChanges();\n    return Ok();\n}", "lang": "csharp", "options": ["`204`: DELETE ყოველთვის 204-ს აბრუნებს", "`200`", "`201`", "`202`"]}, {"id": "A5", "text": "`Stock` = 0 მქონე პროდუქტზე `GET /api/products/{id}/unit-price`. რას მიიღებს კლიენტი?", "code": "[HttpGet(\"{id}/unit-price\")]\npublic IActionResult UnitPrice(Guid id)\n{\n    var product = _db.Products.Find(id);\n    if (product is null) return NotFound();\n\n    return Ok(product.Price / product.Stock);   // decimal / int\n}", "lang": "csharp", "options": ["`200` და `0`", "`400`", "`500`: `DivideByZeroException`", "`404`"]}, {"id": "A6", "text": "`PUT /api/products/AAA...` body-ით `{ \"id\": \"BBB...\", \"name\": \"X\", \"price\": 5, \"costPrice\": 3 }`. `UpdateProductRequest(string Name, decimal Price, decimal CostPrice)`. რომელი პროდუქტი შეიცვლება?", "options": ["`BBB...`: body-ს პრიორიტეტი აქვს", "`AAA...`: id მისამართიდან მოდის, body-ში `id` იგნორირდება", "ორივე", "400: id-ები არ ემთხვევა"]}, {"id": "A7", "text": "`CreateProductRequest`-ში ველს `Title` ჰქვია, `Product`-ში `Name`. `ToEntity` Mapperly-თია. რა მოხდება?", "options": ["Mapperly მიხვდება და `Title` → `Name` გადაიტანს", "Build ჩავარდება", "Build გაივლის გაფრთხილებებით (`Title` არსად არ წავიდა, `Name` არაფრით შეივსო). პროდუქტი ცარიელი სახელით შეინახება", "Runtime-ში `NullReferenceException`"]}, {"id": "A8", "text": "action აბრუნებს `Ok(new ProductResponse(id, \"Phone\", 500))`. როგორ გამოიყურება JSON?", "options": ["`{ \"Id\": \"...\", \"Name\": \"Phone\", \"Price\": 500 }`", "`{ \"id\": \"...\", \"name\": \"Phone\", \"price\": 500 }`", "`[\"...\", \"Phone\", 500]`", "`ProductResponse { Id = ..., Name = Phone, Price = 500 }`"]}, {"id": "A9", "text": "რა მოხდება?", "code": "public static class ProductMapper { ... }\n\npublic class ProductsController : ControllerBase\n{\n    public ProductsController(DataContext db, ProductMapper mapper) { ... }\n}", "lang": "csharp", "options": ["Container `ProductMapper`-ს ავტომატურად შექმნის", "კომპილაციის შეცდომა: `static` კლასი პარამეტრის ტიპი ვერ იქნება", "„Unable to resolve service“ შეცდომა", "`mapper` იქნება `null`"]}, {"id": "A10", "text": "რას დააბრუნებს `GET /api/products`?", "code": "public class ProductsController : ControllerBase\n{\n    private readonly DataContext _db;\n\n    public ProductsController(DataContext db)\n    {\n    }\n\n    [HttpGet]\n    public IActionResult GetAll() => Ok(_db.Products.ToList());\n}", "lang": "csharp", "options": ["200 და პროდუქტების სია", "200 და `[]`", "500: `_db` არის `null`, constructor-მა მიღებული `db` ველში არ ჩაწერა", "კომპილაციის შეცდომა"]}, {"id": "A11", "text": "`CounterService`-ს აქვს `private int _count;` და `public int Next() => ++_count;`. Controller-ი მას constructor-ით იღებს და აბრუნებს `Ok(_counter.Next())`. მოვიდა 3 მოთხოვნა. რას დააბრუნებს მესამე?", "options": ["Singleton: `3` · Scoped: `1`", "Singleton: `1` · Scoped: `3`", "ორივეზე `3`", "ორივეზე `1`"]}, {"id": "A12", "text": "ერთ მოთხოვნაში Controller-ი `_db.Products.Add(product)`-ს აკეთებს (SaveChanges-ის გარეშე), შემდეგ იძახებს `_saver.Save()`-ს. `Saver` constructor-ით DataContext-ს იღებს და `_db.SaveChanges()`-ს იძახებს. შეინახება პროდუქტი?", "options": ["DataContext Scoped-ია: შეინახება · Transient-ია: არა", "ორივე შემთხვევაში შეინახება", "არცერთ შემთხვევაში", "DataContext Transient-ია: შეინახება · Scoped-ია: არა"]}, {"id": "A13", "text": "მე-7 მომხმარებლის ყველა შეკვეთა უნდა წამოვიღოთ. რომელი endpoint არის ყველაზე REST-ული?", "options": ["`GET /api/getOrdersByCustomer?id=7`", "`GET /api/customers/7/orders`", "`POST /api/orders/customer/7`", "`GET /api/orders/getAll/7`"]}, {"id": "A14", "text": "კლიენტმა POST-ზე გამოაგზავნა გატეხილი JSON: `{ \"name\": \"Phone\", \"price\": }`. რა სტატუს კოდს მიიღებს?", "options": ["500", "400: `[ApiController]` JSON-ს ვერ კითხულობს და action-ს არ იძახებს", "200 და `price` = 0", "404"]}, {"id": "A15", "text": "რატომ აბრუნებს action `IActionResult`-ს და არა პირდაპირ `ProductResponse`-ს?", "code": "public IActionResult GetById(Guid id)", "lang": "csharp", "options": ["`ProductResponse` JSON-ად ვერ გარდაიქმნება", "ერთ action-ს სხვადასხვა პასუხი სჭირდება: `Ok(data)` (200) ან `NotFound()` (404)", "`IActionResult` უფრო სწრაფია", "Swagger სხვა ტიპს ვერ ხედავს"]}, {"id": "A16", "text": "POST-მა 201 დააბრუნა, მაგრამ GET ახალ პროდუქტს ვერ პოულობს. რატომ?", "code": "[HttpPost]\npublic IActionResult Create(CreateProductRequest request)\n{\n    var product = request.ToEntity();\n\n    _db.SaveChanges();\n    _db.Products.Add(product);\n\n    return CreatedAtAction(nameof(GetById), new { id = product.Id }, product.ToResponse());\n}", "lang": "csharp", "options": ["`CreatedAtAction` არასწორია", "`SaveChanges` `Add`-მდეა: ჯერ შენახვა სრულდება (შესანახი არაფერია), მერე ემატება და მოთხოვნის ბოლოს იკარგება", "`ToEntity` Id-ს არ ანიჭებს", "GET სხვა ბაზას კითხულობს"]}, {"id": "A17", "text": "`Product.Id` Guid-ია. რა მოხდება `GET /api/products/abc`-ზე?", "code": "[HttpGet(\"{id}\")]\npublic IActionResult GetById(string id)\n{\n    var product = _db.Products.Find(id);\n    if (product is null) return NotFound();\n    return Ok(product.ToResponse());\n}", "lang": "csharp", "options": ["404", "400", "500: `Find`-ს `string` გადაეცა, Primary Key კი `Guid`-ია", "200 და `null`"]}, {"id": "A18", "text": "იმუშავებს ეს კოდი? (`ToResponse` Mapperly-ს extension method-ია)", "code": "[HttpGet]\npublic IActionResult GetAll()\n{\n    var result = _db.Products\n        .Select(p => p.ToResponse())\n        .ToList();\n\n    return Ok(result);\n}", "lang": "csharp", "options": ["იმუშავებს: EF ბაზიდან ველებს კითხულობს, `ToResponse()`-ს კი ბოლო `Select`-ში C#-ში იძახებს", "არ დაკომპილირდება", "Runtime-ში შეცდომა: EF `ToResponse()`-ს SQL-ად ვერ თარგმნის", "დააბრუნებს ცარიელ სიას"]}, {"id": "A19", "text": "რომელი დებულებაა სწორი DTO-ებზე?", "multi": true, "options": ["`UpdateProductRequest`-ს Id არ აქვს, რადგან Id მისამართიდან მოდის", "`ProductResponse`-ში `CostPrice` არ არის, რადგან შიდა მონაცემია", "DTO-ები `record`-ია, რადგან EF Core-ს ასე სჭირდება", "Entity ბაზის ნაწილია, DTO კი API-სა და კლიენტს შორის კონტრაქტი"]}, {"id": "A20", "text": "`Program.cs`-ში დარეგისტრირებულია მხოლოდ `AddControllers()` და `AddDbContext<DataContext>(...)`. რომლის მოთხოვნა შეიძლება Controller-ის constructor-ში?", "multi": true, "options": ["`DataContext`", "`IConfiguration`", "`ProductsController` (სხვა Controller-ში)", "`CounterService` (ჩვენი კლასი, დაურეგისტრირებელი)"]}]}];
+const POINTS = 5;
+const DURATION_MIN = 30;
+const K = "F0dsCEFbEksaAkYNQ2NTMUkNGxQJSxICQ0ZXEEwDGAxOWUOAsaXZ4PDW4KKD7/0N2OD607OlgueggrvMjeaw2OD007OkguejgrvzjeaMGYLimtG7/oW0w9nh9ISumEOAsZrZ4PnW4JKD78vMuvmAsa3Z4PXW4JlOTISuooLiotG78YW0w9nh/ISuokOAsavZ4MrW4KWD7//Muv6AsaMYguengrv8jea12ODAEtG7+IW099nhwoSumILiqtG794W0w9nh+ISuqILiotG7y4W0+xZCjea/2ODx07OrguengrvAjea42OD507OYgueggrv3jea12ODA07OogueWQ9nh8oSumYLir9G7yYW099nhzYSuoUOAsafZ4PTW4K2D7/3MuvCAsaDZ4PgXgrv6jeaB2ODG07OsguemgrvyTISuqoLiohDZ4MXW4KCD7/UN2OD507OZguejgrv3TFYN2ODA07OoguebgrvFjea12ODA07OgQ4W099nh9oSurYLiqdG794W0/9nhzoSuoYLipRDZ4PzW4K2D78TMuveAsaHZ4PQZQ9nh/ISuooLiqtG7wYW0/tnh90XMuvCAsaDZ4PbW4K2D78jMuvuAsZDZ4PfW4KhCjea82ODx07OuguenTRofQEUPeFFDCBBDQQUVWRg5XjgBGUEWWkkaWUQVgrv5jea92ODB07OQgueXgrvBjeaP2OD107OpguevQ9nhy4SurILiptG7+YW08xghAwtZSwwNXlVKToW0+9nh/4SuqYLirhDZ4PDW4JiD7/IN2ODA07OoguejgrvCjea62OD8EtG7yYW0zdnhzISuoYLiqNG7y4W0+xiD7/3MuvqAsZDZ4PzW4KmD7/HMuvKAsaAWQ4W0/tnhzISuoUMAUURRDAoXgrv0jeaO2ODA07OaguengrvxTISurYLiktG79IW0+xiD7/bMuvNB07Ogguesgrvyjea42OD1EtG7+IW099nh+4SupILiodG7+4W09BiD7/bMuvNB07OjguevgrvDjea92OD607OogueXgrv1jea12OD2EnFrM0p5JmxCLwpfXE6AsajZ4MXW4K+D7/DMuvuAsZEYgueugrv/jeax2ODF07OiguevgrvHjeaP2OD507OoWUTW4K2D7/HMusNB07OUgueQgrv3jea52ODD07OZT0TW4JiD7/jMuviAsaTZ4P7W4KBCjea/2ODx07Ojgueqgrv6jeaG2ODx07OWgueqgrvDQkdQFUNDcwMaWURMQVlAVkV2CD5NEhJPCx0VWRhAjeaw2ODB07Oggueigrv2TISukYLiotG78oW0+dnh8YSupYLiqhDZ4PDW4KOD7/LMus2AsaXZ4PDW4K2D7/UBGYLiqdG784W08dnhzISuqYLiqRBKDBFDClYFQYSumEOAsa7Z4MTW4KCD7/jMusOAsajZ4MbW4KyD78fMuveAsaHZ4PwXgrvyjeaI2OD007OZWUTW4K6D78bMusKAsZLZ4PwXgrvDjea12ODD07OfgueigrvyTISumoLiltG7w4W0/hiA7PvMuvqAsa3Z4PjW4KGD78XMuveAsZLZ4MfW4KKD7/3MuvODsqwUQ4W09tnh9ISuqoLiktG790TW4KaD7/XMusOAsaDZ4P/W4KyD78fMusOAsagUQ4W089nh94SuoYLikNG7/oW0+BgCPwBMSwAJUhDZ4PzW4KOD7/XMusOAsZ/Z4PHW4KyD7/TMusJPEtG7+oW0/tnh8ISunYLiqNG7+4W0xtnhzoSuoUOAsavZ4PTW4JCD7/3Muv+AsaDZ4PQbQ9nhzISupILimNG780TW4KWD78XMuvtB07OQguengrvzjea32OD807OkguevQ9nh+ISumYLipdG7/4W089nh9ISumYLiotG78ETW4KGD7/jMuv+AsanZ4MTW4KyD78fMusCAsarZ4PzW4KhOTISuooLiotG78UoXA0MLCBhNGYLiodG780RXGFYDAQBQWU1DTxwYQSUDQQJCF0dMG1lBaQFlT0QVFFAbTl8NG4Lik9G7wYW089nhzoSumoLikxDZ4P3W4KWD7/bMusJBemRsM0TW4KOD7/HMuvSAsa3Z4PfW4KBCjea02OD5EtG784W0wxiD78nMusSAsaXZ4PDW4JqD78QBGYLiotG7w4W089nh94SurYLioRDZ4PzW4JlOTISumYLiotG7woW089nhxkVMWhcIXV4YguengrvzjeaN2ODC07OkguejgrvzjeaMA0MBfVsQSgQXXhhQXFUDGTEkYWQVguevgrvDTISuooLiqtG7zYW099nh/4SurILiqtG79ETW4KiD78ANWS0OcV9WFwFZFxBLDEUFC1NVGxDZ4MvW4KWD7/TMuvuAsaAUQ4W0+Nnh/ISuq4LiktG784W0+BgEHgRAXBQOQFsYguengrv5jea92ODAEtG79IW089nh+YSuqYLioRDZ4PTW4JhCjea92ODA07OUgueqgrvCjea52ODw07OZTUZKTxhALVAPA0MaEFEaWURsUWVOTEdaURpDCBAaAwBSAFEPDQlNFILiqtG7wkQHTtnh+oSurUOAsaLZ4PTW4J+D7/jMuseAsaAYguefgrv2jeaH2ODy07OlguesgrvyjeaMGYLiotG78YW08Nnh+ISuqILikx4YAgdDClcMQYSukYLiqhDZ4PfW4KiD78bMus6AsaTZ4MTW4KyD7//MuvtB07OQguejgrvIjea+2OD807OjguenQ9nhzYSurYLiktG79oW099nhzISuoYLikxDZ4MzW4KyD78/MuvCAsa3Z4P/W4KiD7/UXGVZRAh4YgueWgrvOjeaw2ODB07OgQ4W0xtnhxoSurYLip9G784W08xiD78rMuveAsZAYguefgrv2jea22OD807OUguesgrv2jea82ODxEhhYCgIXS0gQAwFYWhdPYURXAA8XXgVCXEwNSwYVR0JWQyZWB2oHHRBIShdJHB4WSgQeTRofQEUPeFVDCBBDQQUVWRg5XTgBGUEWWkkaWUQVA20SCARZXDMTXVRNABBlBkkXCRZZWU6AsZEYAy1TAxiD7/DMuveAsarZ4PwXgrvyjeaNGYLiotG7xoW09tnhzUkN2ODx07OjguevgrvAjeaw2OD6EnprLCoagrv6jeaMGQMIVlAYgueUgrvzjeaN2ODx07OigueqgrvxTISuoYLioNG7/4W0/tnhzISuoYLiktG78IW099nh/YSuqU1B07OYgueqgrv5jea52OD707OgQ4W0/dnhzISupILiodG7wIW0xtnhzoSuoUOAsZjZ4PDW4KCD78/MuvaAsarZ4PDW4KmD7/UBGYLiqdG7+4W0wtnh/ISuooLiotG7w4W09Nnh9EXMus+AsZfZ4PHW4KyD78fMusJBGlBDCgBKAxFMTISumILintG7/oW0w9nh+ISuqkOAsaDZ4P/W4KCD78fMuv6AsasYguengrvCTISuqYLil9G79oW0whg3HAFMTQZBdmR3ToW0whgrCEsPRE9BEHEPQV4XGBoDTl8NYlE8HhAaFAxOQQJCTihMSRMEQFxBQ4W09tnh+ISuo4LiptG78oW0whiD78TMuvOAsZ7Z4PDW4KKD7/3MuvRB07Oogueugrvyjea42ODJ07OggueXgrv2jea82ODAHBDZ4MXW4KiD78vMuveAsarZ4PDW4KmD7/0N2ODx07OYQ4W099nh94SuroLinNG79oW099nh+YSuqU9B07Ooguesgrv6jeaP2OD807OjQ4W0/tnhzEXMuvGAsaDZ4MDW4JiD7/LMus2AsajZ4P7W4KyD7/TMuvOAsZEYguevgrvJjea32OD107OtguenQ9nh/4SuqUMBfFFVBgQXgrv+jea92ODz07Obguetgrv6jeaM2ODP07Ojguejgrv3TAVxGz9DUh3Z4PTW4KtCjeaN2ODI07OsguemgrvyQkXMuvOAsavZ4PzW4JqD7/jMuvhB07OogueXQ9nhz4SupYLiodG780TW4JuD7/fMusCAsarZ4PDW4KmD7/HMuvmAsZfZ4PkXLlkSHABfVRpM07OZQ4W08dnh/ISunYLiktG79IW0zdnh9ISuo4LiptG78oW099nh/YSuoU1DTxwYQSUPQQJCF0dMG1lBaQFlT0QVFFAbTl8NGyIyYh52JjAXIFcQCUVnaiwvH9G7wkTW4KSD7/XMuvGAsZPZ4P7W4KCD78TMus2AsavZ4PDW4K2D7/XMuvBBUVFVBgh0AksHQYSuoYLipRDZ4MjW4KyD78XMusJbElB2AglSAxiA6vcNWQ0AX1VYTUTW4KyD78QNcwIXU2NbEQ1HFxWD7/3MusJOdEJXDRBSDVxPjea12ODAEtG7woW0wdnh/ISupYLiodG784W0w9nhzoSuoYLioh4Yguesgrv6jeaL2OD107OpguevgrvDjea92ODAEtG7+oW0+xiD78XMuveAsaLZ4PzW4JmD78fMusOAsZEYguengrvCTISuqYLiktG7yoW099nh+YSumE1DTxwYQSUOQQJCF0dMG1lBaQFlT0QVFFAbTl8NGwMSRlFMCgdXQ9nh9YSuo4LiotG7woW0+9nhzUXMuv6AsaHZ4PzW4KyD78DMusGAsagYguengrvCTISuqYLiktG7woW099nh/YSupILio9G7wkgXgrvyjea22OD507Oagueqgrv5TISuooLiqtG7woW0+xiD7/fMuvOAsaPZ4PTW4JKD7/HMuviAsaAYguengrvCjeaHGYLimtG794W0+9nhx4Suo4LiptG78oW08xZCCR1ZXA0SW19WQwlSF1ANCEjMuveAsaHZ4MUXgrv/jea82OD507OsgueSgrvAjea1GYLiotG7w0TW4JmD78jMuvuAsZDZ4PfW4KyD7/TMuvNbElBIEQtTFlsWQjFCawYSQl9WEAEfSlhCjeaz2OD507OYguekgrvyjeaz2OD507OYQ4W0+9nhx4SuqYLinNG794W08tnh/EXMuvCAsaAYJy0XgrvyjeaIGYLik9G784W0ztnh9ISumYLirxDZ4PTW4JhCjea92ODB07OggueWTRofQEUPeFJREAoYGEZWQQJCN1dwFUNDRVhBQV4XQXsNAhFMUA0EQBBYBwZXTtnhzUXMusKAsZzZ4PnW4JiD7/XMuvBB07Ooguebgrv3jea+2OD507OZT0TW4KOD7/XMuvGAsZDZ4PTW4KNCDDpJW0NcElRaWAQXgrvyjea02OD707OgguenTxiD7/XMuviAsajZ4MbW4KWD7/4N2OD007Osguetgrv6TAVDTA8NUh3Z4PTW4KtCjeaN2ODI07OsguemgrvyTISuqoLiohBYPABVTWgQAwFYWhcSUh3Z4PLW4KxCDCtYVQ8zV1ZdEQFZAF0nFAZISRcIXV5YQ4W0zdnh/4SurYLio9G780oXA0oHDQFCVw8YUhDZ4PHW4KyD7//MuvuAsZEYguefgrv2jeaO2OD007OZguejgrvzjea32OD807OpguenQ9nh9YSupILiqdG7/YW0+9nh9oSuqYLimNG7+4W0+9nhzUXMusuAsaTZ4M7W4KuD7/jMuviAsaAYguengrvCTISuqYLiktG7+4W0whZAEUkNGyJQAxICQx8VAhpYTD4dZE9BEEdQGkYNQxoxBQtKVQYVXV4YguejgrvCjea62OD5EtG7/oW08tnh9ISurYLil9G7wYW0+9nh/EXMuviAsafZ4PDW4KJCjea92OD/07OuguejTxiD7/XMuviAsajZ4MbW4KWD7/4NWTwCXUVWFwQXgrvwjeaN2OD807Otguekgrv2jea82ODxCBAJT0QFTxhRQkV+WgwRV1QYgueQgrv/jea42OD107OiQ4W0+Nnh8YSuroLinNG7/oW09tnh8ISuqYLipNG790TW4KiD78vMuvOAsarZ4PzW4KhCjea+2ODxEtG7xIW0/tnh+YSurYLiqNG79IW09tnh9ISumENQH9G7wkTW4KiD7/TMusOAsZPZ4PjW4KyD7/TMusJPEtG784W0+Nnh9ISum4Lir9G7+ETW4KCD7/LMuvaAsarZ4PDW4KmD7/UNagoPVVxdFwtZTtnh9ISumEOAsavZ4PfW4KqD7/jMuviAsaDZ4MTW4KyD7/jMuvKAsaAYgeSpgrvDjea92OD107OYgueggrv/jea+GYLildG79oW099nh9oSuqYLik9G79IW09tnh9ISumIHhrh4aHkgXQXlTXkcXGRhDUxICQz8HPhRCThJFQEFbEhJrAAtHBlxPjea72OD1EnNXDRBFDFQOCRcA2OD5EtG78IW08xgCPwRbXBEBEtG794W0w9nh+0VpWBcAcV9WFwFPFxWD78QN2OD507OuguevgrvyjeaN2OD107Opguejgrv+QEXMuvOAsavZ4PzW4JqD7/jMuvhBUmNZFQF0C1kMCwBeWUMiXV5MEQtbD10QQYSuoYLikxBYIgBTAxWD78QN2ODP07Osguekgrvyjea42ODAHBBsEQVZEFEHAhEA2OD307OsQwRkAk4HHgUA2ODAEtG79IW089nh+YSuoYLik9G7+0gXgrvIjea92ODB07Ogguejgrv4jea1GScARlF7DApDBkAWTISuqYLil9G79oW0whRCjea22OD507OZguevQ1gxDRNIegsAXFddEAQXgrvyjeaN2ODx07OcguejgrvCjeaMGYLiqtG7/4W089nhwoSuqYLip9G7wkTW4KuD7/UNegwPRkJXDwhSERWD7/3MusJB07OSgueigrv4jea12OD707OsguemgrvyTISuoYLiq9G784W0w9nh/oSurYLio9G780oVHhRCTiQcCkFbEksaAkYNQ2NTMUkNGxQJSxICQ0bW4JiD7/HMusKAsZPZ4MTW4JmD7/0N2OD507OsgueXgrvyjeaN2ODE07OggueUgrv4jea92ODyHhDZ4PTW4JiD78TMuveAsaHZ4PzW4K+D7/0N2ODA07OogueZgrv2jea32OD107Opguevgrv1VkXPuf2AsavZ4PnW4KOD78vMuviAsaDZ4MTW4KyD7/TMuveAsarZ4PwXVBiA6vcN2OD607OggueWgrv6TISukYLiptG7+oW09tnh+ISuroLiptG78oW0+9ri8EsN2OD607OlgueSgrv5jea52ODy07OsguemgrvyTAVqfDcBH9G7+4W08xRCjea92OD607OggueVgrv/jea2GTYzfh3Z4MzW4KBCjea72OD607OkguenQ9nh/ISumUOAsajZ4MjW4KyD78XMuveAsaHZ4PQZQUVOTEdsCFdDCBBDQQUVWRg5XTgBGUEWWkkaWUQVKWstIkjMuvuAsZEYguebgrvyjea02OD507OvgueZgrv3jea9GQICRllXDUnW4KOD7/bMuvdB07OWguekgrv2jea82ODxHBDZ4PPW4JtCjea42OD107OYQ4W0+9nh9YSuoYLipdG7zYW099nh/YSuqU9B07Ohguetgrv6jea52OD907OaguevgrvDTISukYLiptG7yYW08Nnh8YSuooLiotG780gXgrvyjea22OD507Oagueqgrv5TAV2eBMIcV9WFxZYD1QHHjhNGVdRAh3Z4MUXgrvyjea82ODB07Obguergrv2jea82ODAEtG78IW08xgDDxFEVg1M07OggueWQ9nh9YSupILiodG7+0TW4JmD7/XMuveAsZDZ4PPW4KWD7/YN2ODx07OYQ4W0wtnhzISumoLiqNG78IW099nh/YSuqU1DTxwYQSUGVhpYTB4PWEFbEmsJPkgXQU8KFUcXGUEBe3FbFw1YDWoHHxBBTQNB07OkguevgrvKjeax2ODx07OtgueWQ9ri8oSup4LiotG7woW0wNnhwoSuoUOAsZHZ4MbW4KiD78fMusCAsZEYgueugrv/jea+2OD507OvgeSrTRiD7/7MuvuAsZHZ4PwXgrvOjeaK2ODx07Oigueqgrvzjea12OD2EtG794W0w9nh+4SuoUOAsavZ4PDW4K+D7/jMuvCAsagYgueWgrv6jeaP2ODC07Ooguedgrv6jea12ODAEtG7+IW0+9nhwoSurYLiodG79oW0+9nh+0UfCVNM07OZguengrvITISuqYLio9G7w4W0wNnh8ISurYLio9G7wkTW4KuD7/UNDVNVH9G7woW089nhxksNWTMTXVRNABBlBksSAwteXANB07OYgueqgrv5TISuqILiktG7wIW0/9nh/4SurYLio9G7/oW08Nnh+ISumE9B0LCmgueigrv2jeaNGYLip9G7+4W0/dnh8YSurILiptK4/0nW4JlCjea/2ODx07OjgueqgrvMjea92ODD07OtguevgrvDTISuooLiq9G784W0x9nh9ISupEOAsaLZ4PLW4KhCjea92ODH07OogueXQ9nh9ISunILirtG794W08tnh8YSuqoLioh4aHkgXQXlTWkcXGRhDUxICQz8GPhRCThJFQEFbEhJYMAVBBnsKDQtKXBABEtG7+4W0/9nh/ISul4LiotG79oW0whiD7/3MuviAsaDZ4MUbQ9nhzISuqYLimBB7CwVZBF1COBdMWggEQB3Z4MzW4KCD7/UN2OD507OjQ4W0+Nnh8YSuooLiptG7/4W0wdnhxISuoU1Bc1RcQ4W0+Nnh9ISumEOAsZjZ4PDW4KOD7/bMuveAsaLZ4PTW4KhOTISuqYLiqdG7+4W0wdnh8YSuokOAsaDZ4MTW4KiD7/DMuvuAsawYguevgrv+jea92ODP07OogueigrvDQkXMuvSAsaDZ4PjW4KOD7/3MuviAsaPZ4PDW4K2D78XMuv6AsaHZ4PQNQ1gjCAFNGYHnoBBYMAVBBnsKDQtKXBABEtK+8UTW4KaD7/XMusKAsZPZ4MrW4KBMThgBGUEgAwcaWURMQVlAVkV2Cz5NEhJPCx0VWRhADCNEVwcBEmBzToW0+9nhzUXMusGAsajZ4PrW4KCD78QN2OD607OkguevgrvKjea42OD907Osguetgrv/jea82ODx07OZQ4W099nh9oSuoYLikx4YAxdDEVEMCwUA2OD507OZQ4W08dnh/ISuqoLiotG7yYW099nh94SuoYLik9G784W0whiD783MuveAsZrZ4PfW4KWD7/7MuvOAsZEYguengrvwjea+2OD107OpgueWQxCA7PtGXBpBRFFUFgEXTRZMTBJMSkMOVBBMGhRSQx8RGBdEVwRGHhBPCw1UCxgGAwBeGQ0ORhBVAhBUCxgWBAANSREOQlVKFx0XF0ESCUVCX0NGdUVRB0PV46RLQEXMusOAsaDZ4M4XVghSQYSuoYLioh4YguepgrvyjeaN2ODx07OjguejgrvAjeaN2OD5ElB/Fg1TQ1EGDEXMusCAsazZ4PfW4KhCjea12ODG07OlgueWWRiD7/7MuvOAsZjZ4PzW4KRCDARPWgNM07OuguejQ1g5LRVEegwPRkJXDwhSEWUCTFEdCU6AsZEYguekgrvyjea92ODw07OYgueUgrv+jea52ODw07OZT0RWAEwLAwsA2OD607OrguejTRofQEUPeFJZEAoYGEZWQQJCN1VwFUNDRVhBQV4XQX0kQYSumEMyY3wVguengrvxTISuroLiotG7w4W08dnh94SupYLiohDZ4P/W4JaD7/jMuvmAsa3Z4PcXgrvGjea12OD707OagueXgrv6jeaM2OD207OtguevgrvDTE1NbgsEQFVYSkgXgrvxjea92OD707Ooguelgrv2jea82OD507OZgueggrv3jea12ODAEtG78IW08xiD7/7MusKAsaLZ4PTW4K2D78TMuvuAsZHZ4PPW4K2D7/3MusJB07OZgueagrv6jeaN2ODy07OsguemgrvyQkXMuvKAsa3Z4P7W4KVCDDZIVQYCRlAVguefgrv6TISumoLimNG7/4W0/tnh/UVuGkOAsavZ4PDW4K+D7/jMuvCAsZEYguevgrvDTISuqILiotG79YW0+9nh/4SuqYLirhDZ4MjW4KiD7/7Muv6AsZbZ4PDW4KmD78bMuvlB07Ojgueqgrv+jea92ODL07Osguesgrv0jea5GSBCH9G7y4W0+xiD7/3MusiAsaDZ4MrW4KyD7/TMusJPElBvCwFFBhASTFgTGRNPZl9qBhdHDFYRCU0EF01PG1AYgueugrv6TISukILiotG79oW089nhzISuqoLiptG78oW0/tnh/4SuqU1DTxwYQSUGWhpYTB4PWEFbEmsIT0QGTxhRMUkNGxQJSxICQ0ZzN3dPjea52ODw07OZQyFxQ9nhzYSuqYLiptG7w4W09Nnh8YSuqkOAsaDZ4MQXgrv6jeaH2OD907OlguemgrvDQEXMuvuAsZEYguesgrvMjeaw2OD707OlguekQ30MGAxZQE6AsaTZ4PXW4K+D7/XMuv9B07OjgueUgrvKjea92OD807OpgueWTRgCHgBOVhEFUhDZ4MfW4KmD78XMuvOAsarZ4PnW4KtCjea22OD807Ohguetgrv2TISukILiotG7/4W089nhwISurYLiktG7+4W08wJCjea52ODB07OvQ4W0zdnh/ISur4LimtG7+0RHEVcSCRdZQE6AsaTZ4PXW4KBCjea+2ODxElNXDRdDEU0BGApfF0EcHhAaIlYHQQJCF0dMG1lBaQAUQ1VqTxhAGw1UG1lBEHNXDRBWClYHHkjMuviAsaAYguevgrvIjea12ODAEtG7+4W0whRCjeaN2ODx07OSQ4W08Nnh/ISumYLiptG78YW0+9nhzYSum4LiktG7+4W0w9nh/4SuqUNJUnRZFwV0DFYWCR1ZWUpNEtG78IW08xgEHgRAXBQOQFsVguevgrvDTISumILiptG7w4W09tnh9ISumILiptG78oW0+xhKDCxuVg0HW1dNEQVDClcMDEwDGYLim9G79oW099nh8ISuoUOAsanZ4P7W4KiD78TMuvtB07OYguejgrvwjea12ODA07OagueXgrvyjeaH2OD507OggueWQ9nh/oSuqYLiktG794W0y9nh+EXPuf00XFFaDwEXF1dCHgBeVg8XVxBLBhZBClsHjuWxFILikxDZ4P/W4KWD7/fMuvaAsZrZ4PDW4KOD78QDGSAOXERKDAhbBkpPjea52ODw07OgQ4W0/9nh/ISuq4LikdG7+YW0+9nhzYSul4LiqdG794W09tnh/ISuqkOAsZHZ4PDW4JiD7/DMuvuAsZHZ4PDW4KmD7/XMuvBB07OogueXQ9nhzISurYLioNG7+4W0wtnhzoSumYLiqtG7w4W08Nnh+ISuqILioh4aHhk=";
+const S = "le-9ca208cd7c8b";
+const LETTERS = ['ა', 'ბ', 'გ', 'დ'];
+const STORE_KEY = 'exam:' + location.pathname;
+
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const inline = s => esc(s).replace(/`([^`]+)`/g, '<code class="inline">$1</code>');
+const pad = n => String(n).padStart(2, '0');
+const fmtPts = n => (Math.round(n * 100) / 100).toString();
+const QUESTIONS = EXAM.flatMap(s => s.items.map(q => ({ ...q, sec: s.id })));
+const MAX = QUESTIONS.length * POINTS;
+
+/* ---------- highlight ---------- */
+const KW = {
+  text: /(?!)/g,
+  csharp: /(\/\/[^\n]*)|(\$?"(?:[^"\\\n]|\\.)*")|(\b\d+(?:\.\d+)?\b)|\b(int|double|decimal|string|bool|void|static|return|if|else|for|foreach|in|while|new|true|false|var|public|private|readonly|class|record|partial|this|null|is|get|set)\b|\b(Console|List|Guid|Action|Func|IActionResult|ControllerBase|DataContext|Product|ProductResponse|Counter)\b|(\[[A-Za-z]+(?:\("[^"]*"\))?\])/g,
+  sql: /(--[^\n]*)|('(?:[^'\\\n]|\\.)*')|(\b\d+\b)|\b(SELECT|FROM|WHERE|INNER|LEFT|JOIN|ON|GROUP|BY|ORDER|AS|UPDATE|SET|DELETE|INSERT|INTO|VALUES|COUNT|NULL|AND|OR)\b()()/gi,
+};
+function highlight(src, lang) {
+  const re = new RegExp(KW[lang] || KW.csharp);
+  let out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    if (!m[0]) { re.lastIndex++; continue; }
+    out += esc(src.slice(last, m.index));
+    const cls = m[1] ? 'c' : m[2] ? 's' : m[3] ? 'n' : m[4] ? 'k' : m[5] ? 't' : 'a';
+    out += `<span class="${cls}">${esc(m[0])}</span>`;
+    last = re.lastIndex;
+  }
+  out += esc(src.slice(last));
+  return out.split('\n').map(l => `<span class="line">${l || ' '}</span>`).join('');
+}
+const codeBlock = (src, lang) => `<pre class="code">${highlight(src, lang)}</pre>`;
+
+/* ---------- state ---------- */
+let state = { meta: { first: '', last: '', group: '' }, answers: {}, order: {}, start: null, finished: null };
+try { const saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); if (saved) state = Object.assign(state, saved); } catch (e) {}
+if (!state.start) state.start = Date.now();
+for (const q of QUESTIONS) {
+  if (!Array.isArray(state.order[q.id]) || state.order[q.id].length !== q.options.length) {
+    const p = q.options.map((_, i) => i);
+    for (let i = p.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; }
+    state.order[q.id] = p;
+  }
+}
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
+save();
+
+/* ---------- render exam ---------- */
+function renderExam() {
+  $('#qCount').textContent = QUESTIONS.length;
+  $('#maxPts').textContent = fmtPts(MAX);
+  $('#exam').innerHTML = EXAM.map(sec => `
+    <section class="section">
+      <div class="section-head"><h2><span class="sec-letter">${sec.id}</span>${esc(sec.title)}</h2>
+        <span class="section-pts">${fmtPts(sec.items.length * POINTS)} ქულა</span></div>
+      <p class="section-note">${inline(sec.note)}</p>
+      ${sec.items.map(q => {
+        const type = q.multi ? 'checkbox' : 'radio';
+        return `<article class="q" id="q-${q.id}">
+          <div class="q-head"><span class="qid">${q.id}</span><span class="qpts">${fmtPts(POINTS)} ქულა</span>
+            ${q.multi ? '<span class="badge">შესაძლოა რამდენიმე სწორი პასუხი</span>' : ''}</div>
+          ${q.text ? `<p class="qtext">${inline(q.text)}</p>` : ''}
+          ${q.code ? codeBlock(q.code, q.lang) : ''}
+          <div class="opts">${state.order[q.id].map((orig, pos) => `
+            <label class="opt ${q.multi ? 'check' : 'radio'}">
+              <input type="${type}" name="${q.id}" value="${orig}">
+              <span class="letter">${LETTERS[pos]}</span><span class="otext">${inline(q.options[orig])}</span>
+            </label>`).join('')}</div>
+        </article>`;
+      }).join('')}
+    </section>`).join('');
+}
+
+function restore() {
+  $('#fFirst').value = state.meta.first || '';
+  $('#fLast').value = state.meta.last || '';
+  $('#fGroup').value = state.meta.group || '';
+  for (const [qid, vals] of Object.entries(state.answers))
+    vals.forEach(v => { const i = document.querySelector(`input[name="${qid}"][value="${v}"]`); if (i) i.checked = true; });
+  syncOptionClasses(); updateProgress();
+}
+function syncOptionClasses() {
+  document.querySelectorAll('.opt').forEach(l => l.classList.toggle('checked', l.querySelector('input').checked));
+}
+const answeredCount = () => QUESTIONS.filter(q => (state.answers[q.id] || []).length).length;
+function updateProgress() {
+  if (state.finished) return;
+  $('#progress').textContent = `${answeredCount()} / ${QUESTIONS.length}`;
+}
+
+document.addEventListener('change', e => {
+  const inp = e.target;
+  if (state.finished || !inp.matches('.opt input')) return;
+  state.answers[inp.name] = [...document.querySelectorAll(`input[name="${inp.name}"]:checked`)].map(i => +i.value);
+  syncOptionClasses(); updateProgress(); save();
+});
+document.addEventListener('input', e => {
+  const map = { fFirst: 'first', fLast: 'last', fGroup: 'group' };
+  const k = map[e.target.id]; if (!k || state.finished) return;
+  state.meta[k] = e.target.value; e.target.classList.remove('invalid'); save();
+});
+
+/* ---------- grading ---------- */
+function decodeKey() {
+  const raw = atob(K), sb = new TextEncoder().encode(S), bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) ^ sb[i % sb.length];
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+function grade() {
+  const key = decodeKey();
+  return QUESTIONS.map(q => {
+    const correct = key[q.id].a, picked = state.answers[q.id] || [];
+    let frac;
+    if (!q.multi) frac = picked.length === 1 && picked[0] === correct[0] ? 1 : 0;
+    else {
+      const hits = picked.filter(p => correct.includes(p)).length, wrong = picked.length - hits;
+      frac = Math.max(0, (hits - wrong) / correct.length);
+    }
+    const status = !picked.length ? 'empty' : frac === 1 ? 'ok' : frac > 0 ? 'partial' : 'wrong';
+    return { id: q.id, sec: q.sec, picked, correct, why: key[q.id].why, pts: POINTS * frac, status };
+  });
+}
+
+/* ---------- results ---------- */
+const STATUS = { wrong: 'არასწორი', partial: 'ნაწილობრივ', empty: 'პასუხის გარეშე' };
+function renderResults() {
+  const r = state.finished.results;
+  const total = r.reduce((a, x) => a + x.pts, 0);
+  const pct = Math.round(total / MAX * 100);
+  const okCount = r.filter(x => x.status === 'ok').length;
+  const bySec = EXAM.map(s => {
+    const xs = r.filter(x => x.sec === s.id), got = xs.reduce((a, x) => a + x.pts, 0), max = xs.length * POINTS;
+    return `<tr><td><b>${s.id}</b> · ${esc(s.title)}</td><td style="width:40%"><div class="bar"><i style="width:${Math.round(got / max * 100)}%"></i></div></td>
+      <td>${fmtPts(got)} / ${fmtPts(max)}</td></tr>`;
+  }).join('');
+
+  const bad = r.filter(x => x.status !== 'ok');
+  const qById = Object.fromEntries(QUESTIONS.map(q => [q.id, q]));
+  const review = bad.map(x => {
+    const q = qById[x.id];
+    const items = state.order[q.id].map((orig, pos) => {
+      const isC = x.correct.includes(orig), isP = x.picked.includes(orig);
+      const cls = isC ? 'correct' : isP ? 'picked-wrong' : '';
+      const mk = isC ? '✓' : isP ? '✗' : '';
+      return `<li class="${cls}"><span class="mk">${mk}</span><span><b>${LETTERS[pos]}.</b> ${inline(q.options[orig])}</span>${isP ? '<span class="you">შენი პასუხი</span>' : ''}</li>`;
+    }).join('');
+    return `<article class="rv">
+      <div class="q-head"><span class="qid">${q.id}</span><span class="rv-status ${x.status}">${STATUS[x.status]}</span>
+        <span class="qpts">${fmtPts(x.pts)} / ${fmtPts(POINTS)} ქულა</span></div>
+      ${q.text ? `<p class="qtext">${inline(q.text)}</p>` : ''}
+      ${q.code ? codeBlock(q.code, q.lang) : ''}
+      <ul class="rv-list">${items}</ul>
+      <div class="why"><b>რატომ:</b> ${inline(x.why)}</div>
+    </article>`;
+  }).join('');
+
+  $('#results').innerHTML = `
+    <div class="score-card">
+      <div><div class="score-big">${fmtPts(total)}<small> / ${fmtPts(MAX)}</small></div>
+        <div class="score-sub">${pct}% · სწორი ${okCount} / ${r.length}</div></div>
+      <table class="breakdown">${bySec}</table>
+    </div>
+    <div class="res-actions"><button class="btn" id="pdfAgain" type="button">PDF-ად გადმოწერა</button></div>
+    ${bad.length ? `<section class="section"><div class="section-head"><h2>შეცდომების განხილვა</h2><span class="section-pts">${bad.length} კითხვა</span></div>${review}</section>` : ''}
+    <section class="section"><div class="section-head"><h2>სწორად უპასუხე</h2><span class="section-pts">${okCount} კითხვა</span></div>
+      <div class="ok-chips">${r.filter(x => x.status === 'ok').map(x => `<span>${x.id}</span>`).join('') || '—'}</div></section>`;
+  $('#pdfAgain').addEventListener('click', exportPdf);
+
+  document.body.classList.add('done');
+  document.querySelectorAll('.field input').forEach(i => i.disabled = true);
+  $('#timerLabel').textContent = 'ქულა';
+  $('#timer').textContent = `${fmtPts(total)}/${fmtPts(MAX)}`;
+  $('#timer').classList.remove('over');
+  $('#progLabel').textContent = 'სწორი';
+  $('#progress').textContent = `${okCount} / ${r.length}`;
+  $('#finishTop').textContent = 'PDF-ად გადმოწერა';
+  fillPrintMeta();
+}
+
+/* ---------- finish flow ---------- */
+function validateStudent() {
+  const fields = [['fFirst', 'first'], ['fLast', 'last'], ['fGroup', 'group']];
+  const missing = fields.filter(([, k]) => !(state.meta[k] || '').trim());
+  fields.forEach(([id]) => $('#' + id).classList.remove('invalid'));
+  if (!missing.length) { $('#studentError').textContent = ''; return true; }
+  missing.forEach(([id]) => $('#' + id).classList.add('invalid'));
+  $('#studentError').textContent = 'შეავსე სახელი, გვარი და ჯგუფი.';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  $('#' + missing[0][0]).focus();
+  return false;
+}
+function askFinish() {
+  if (state.finished) return exportPdf();
+  if (!validateStudent()) return;
+  const left = QUESTIONS.length - answeredCount();
+  $('#modalText').innerHTML = left
+    ? `<b style="color:var(--bad)">${left} კითხვა უპასუხოა.</b> დასრულების შემდეგ პასუხებს ვეღარ შეცვლი.`
+    : 'ყველა კითხვას უპასუხე. დასრულების შემდეგ პასუხებს ვეღარ შეცვლი.';
+  $('#modal').classList.add('on');
+}
+$('#modalNo').addEventListener('click', () => $('#modal').classList.remove('on'));
+$('#modalYes').addEventListener('click', () => {
+  $('#modal').classList.remove('on');
+  state.finished = { at: Date.now(), results: grade() };
+  save();
+  renderResults();
+  window.scrollTo({ top: 0 });
+  setTimeout(exportPdf, 350);
+});
+$('#finishBtn').addEventListener('click', askFinish);
+$('#finishTop').addEventListener('click', askFinish);
+
+/* ---------- PDF ---------- */
+const fmt = d => `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function fillPrintMeta() {
+  const end = state.finished ? new Date(state.finished.at) : new Date();
+  $('#printMeta').innerHTML =
+    `<span>დაწყება: <b>${fmt(new Date(state.start))}</b></span><span>დასრულება: <b>${fmt(end)}</b></span>` +
+    `<span>დახარჯული დრო: <b>${Math.round((end - state.start) / 60000)} წთ</b></span>`;
+}
+let originalTitle = document.title;
+function exportPdf() {
+  fillPrintMeta();
+  originalTitle = document.title;
+  document.title = `API_Quick_${state.meta.last}_${state.meta.first}_${state.meta.group}`.replace(/\s+/g, '_');
+  window.print();
+}
+window.addEventListener('afterprint', () => { document.title = originalTitle; });
+
+/* ---------- კოპირების დაბლოკვა ---------- */
+const isEditable = t => { const n = t && t.nodeType === 3 ? t.parentElement : t; return !!(n && n.closest && n.closest('input')); };
+let toastTimer;
+function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 1800); }
+['copy', 'cut'].forEach(ev => document.addEventListener(ev, e => { if (!isEditable(e.target)) { e.preventDefault(); toast('კოპირება გამორთულია'); } }));
+document.addEventListener('contextmenu', e => { if (!isEditable(e.target)) e.preventDefault(); });
+document.addEventListener('selectstart', e => { if (!isEditable(e.target)) e.preventDefault(); });
+document.addEventListener('dragstart', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  const k = (e.key || '').toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && ['c', 'x', 'a', 's', 'u'].includes(k) && !isEditable(e.target)) { e.preventDefault(); if (k === 'c' || k === 'x') toast('კოპირება გამორთულია'); }
+  if (e.key === 'F12') e.preventDefault();
+});
+
+/* ---------- timer ---------- */
+function tick() {
+  if (state.finished) return;
+  const left = Math.round((state.start + DURATION_MIN * 60000 - Date.now()) / 1000), el = $('#timer');
+  if (left >= 0) { el.textContent = `${pad(Math.floor(left / 60))}:${pad(left % 60)}`; el.classList.remove('over'); }
+  else { const o = -left; el.textContent = `+${pad(Math.floor(o / 60))}:${pad(o % 60)}`; el.classList.add('over'); }
+}
+setInterval(tick, 1000); tick();
+
+/* ---------- init ---------- */
+renderExam();
+restore();
+if (state.finished) renderResults();
+</script>
+</body>
+</html>

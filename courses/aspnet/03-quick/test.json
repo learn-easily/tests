@@ -1,0 +1,7 @@
+{
+  "title": "Web API — სწრაფი ტესტი (რთული)",
+  "topics": ["REST", "Routing", "DTO", "Mapperly", "DI", "Lifetimes"],
+  "duration": 30,
+  "questions": 20,
+  "points": 100
+}
