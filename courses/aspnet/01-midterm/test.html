@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Backend შუალედური — C#, SQL, EF Core, Web API</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1d23; --muted: #5d6573; --faint: #8a919e;
+    --bg: #eceef2; --paper: #fff; --line: #dde1e7;
+    --accent: #3346c4; --accent-soft: #eef0fc;
+    --ok: #15803d; --ok-soft: #ecfdf3; --bad: #b42318; --bad-soft: #fef3f2; --part: #b54708; --part-soft: #fffaeb;
+    --code-bg: #f6f8fa;
+    --sans: "Noto Sans Georgian", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: var(--sans); color: var(--ink); background: var(--bg); line-height: 1.55; -webkit-user-select: none; user-select: none; }
+  input { -webkit-user-select: text; user-select: text; }
+
+  .toolbar { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.94); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+  .toolbar-inner { max-width: 880px; margin: 0 auto; padding: 10px 24px; display: flex; align-items: center; gap: 20px; }
+  .tb-back { font-size: 20px; color: var(--muted); text-decoration: none; padding: 2px 6px; border-radius: 6px; }
+  .tb-back:hover { color: var(--ink); background: var(--bg); }
+  .tb-item { display: flex; flex-direction: column; line-height: 1.2; }
+  .tb-label { font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; }
+  .tb-value { font-family: var(--mono); font-weight: 600; font-size: 17px; }
+  .tb-value.over { color: var(--bad); }
+  .tb-spacer { flex: 1; }
+  .btn { font-family: var(--sans); font-size: 14px; font-weight: 600; border: 0; border-radius: 8px; padding: 10px 18px; cursor: pointer; background: var(--accent); color: #fff; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+  .btn.finish-btn { background: var(--ink); }
+
+  .paper { max-width: 880px; margin: 28px auto 60px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 48px 56px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.04); }
+  .exam-head { border-bottom: 2px solid var(--ink); padding-bottom: 20px; margin-bottom: 8px; }
+  .eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  h1 { font-size: 28px; margin: 6px 0 4px; line-height: 1.25; }
+  .exam-meta { color: var(--muted); font-size: 14px; display: flex; gap: 18px; flex-wrap: wrap; }
+  .student { display: grid; grid-template-columns: 1fr 1fr 160px; gap: 14px; margin: 22px 0 6px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+  .field input { width: 100%; font-family: var(--sans); font-size: 15px; border: 0; border-bottom: 1.5px solid var(--ink); padding: 6px 2px; outline: none; background: transparent; }
+  .field input:focus { border-bottom-color: var(--accent); }
+  .field input.invalid { border-bottom-color: var(--bad); background: var(--bad-soft); }
+  .field input:disabled { color: var(--ink); -webkit-text-fill-color: var(--ink); }
+  .student-error { color: var(--bad); font-size: 13px; min-height: 18px; }
+  .print-meta { display: none; }
+  .rules { background: #f7f8fa; border: 1px solid var(--line); border-radius: 6px; padding: 14px 18px; font-size: 14px; color: #333a45; margin-top: 10px; }
+  .rules ol { margin: 6px 0 0; padding-left: 20px; } .rules li { margin: 2px 0; }
+
+  .section { margin-top: 44px; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid var(--ink); padding-bottom: 6px; margin-bottom: 6px; }
+  .section-head h2 { font-size: 20px; margin: 0; }
+  .section-head h2 .sec-letter { color: var(--accent); margin-right: 6px; }
+  .section-pts { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .section-note { font-size: 14px; color: var(--muted); margin: 6px 0 14px; }
+
+  .q { padding: 20px 0; border-bottom: 1px dashed var(--line); break-inside: avoid; page-break-inside: avoid; }
+  .q:last-child { border-bottom: 0; }
+  .q-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .qid { font-family: var(--mono); font-weight: 600; font-size: 13px; background: var(--ink); color: #fff; border-radius: 4px; padding: 2px 8px; }
+  .qpts { font-size: 12px; color: var(--faint); }
+  .badge { font-size: 11.5px; font-weight: 600; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 2px 10px; }
+  .qtext { margin: 0 0 10px; font-size: 15.5px; }
+  code.inline { font-family: var(--mono); font-size: .88em; background: var(--code-bg); border: 1px solid #e6e9ee; border-radius: 4px; padding: 1px 5px; }
+
+  pre.code { margin: 6px 0 14px; background: var(--code-bg); border: 1px solid #e3e7ec; border-radius: 6px; padding: 12px 0; overflow-x: auto;
+    font-family: var(--mono); font-size: 13.5px; line-height: 1.6; counter-reset: ln; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  pre.code .line { display: block; padding: 0 16px 0 0; white-space: pre; }
+  pre.code .line::before { counter-increment: ln; content: counter(ln); display: inline-block; width: 36px; margin-right: 14px; text-align: right;
+    color: #b3b9c3; border-right: 1px solid #e3e7ec; padding-right: 8px; }
+  .k { color: #0033b3; font-weight: 600; } .s { color: #067d17; } .n { color: #1750eb; } .c { color: #8c8c8c; font-style: italic; } .t { color: #00627a; } .a { color: #9e880d; }
+
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .opt { display: flex; align-items: flex-start; gap: 10px; border: 1.5px solid var(--line); border-radius: 8px; padding: 9px 12px; cursor: pointer;
+    transition: border-color .12s, background .12s; font-size: 14.5px; }
+  .opt:hover { border-color: #b8bfca; }
+  .opt input { position: absolute; opacity: 0; pointer-events: none; }
+  .letter { flex: none; width: 24px; height: 24px; border: 1.5px solid #b8bfca; display: grid; place-items: center; font-weight: 600; font-size: 13px; color: var(--muted); }
+  .opt.radio .letter { border-radius: 50%; } .opt.check .letter { border-radius: 5px; }
+  .opt.checked { border-color: var(--accent); background: var(--accent-soft); }
+  .opt.checked .letter { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .otext { padding-top: 1px; }
+
+  .finish { margin-top: 48px; padding-top: 24px; border-top: 2px solid var(--ink); display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .finish p { margin: 0; color: var(--muted); font-size: 14px; max-width: 520px; }
+
+  /* ---------- results ---------- */
+  #results { display: none; }
+  body.done #results { display: block; }
+  body.done #exam, body.done .finish, body.done .rules { display: none; }
+  .score-card { margin-top: 28px; display: grid; grid-template-columns: 220px 1fr; gap: 28px; align-items: center;
+    border: 1.5px solid var(--ink); border-radius: 10px; padding: 24px 28px; }
+  .score-big { font-family: var(--mono); font-weight: 700; font-size: 52px; line-height: 1; }
+  .score-big small { font-size: 20px; color: var(--muted); font-weight: 600; }
+  .score-sub { color: var(--muted); font-size: 14px; margin-top: 8px; }
+  .breakdown { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .breakdown td { padding: 6px 4px; border-bottom: 1px solid var(--line); }
+  .breakdown td:last-child { text-align: right; white-space: nowrap; font-family: var(--mono); font-weight: 600; }
+  .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; min-width: 80px; }
+  .bar i { display: block; height: 100%; background: var(--accent); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .res-actions { display: flex; gap: 10px; margin-top: 18px; }
+
+  .rv { padding: 18px 0; border-bottom: 1px dashed var(--line); break-inside: avoid; page-break-inside: avoid; }
+  .rv-status { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 2px 10px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rv-status.wrong { color: var(--bad); background: var(--bad-soft); }
+  .rv-status.partial { color: var(--part); background: var(--part-soft); }
+  .rv-status.empty { color: var(--muted); background: #f2f4f7; }
+  .rv-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+  .rv-list li { display: flex; gap: 10px; align-items: flex-start; border: 1.5px solid var(--line); border-radius: 8px; padding: 7px 12px; font-size: 14.5px;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rv-list li .mk { flex: none; width: 20px; font-weight: 700; text-align: center; }
+  .rv-list li.correct { border-color: var(--ok); background: var(--ok-soft); }
+  .rv-list li.correct .mk { color: var(--ok); }
+  .rv-list li.picked-wrong { border-color: var(--bad); background: var(--bad-soft); }
+  .rv-list li.picked-wrong .mk { color: var(--bad); }
+  .rv-list li .you { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; font-weight: 600; }
+  .why { margin-top: 10px; background: #f7f8fa; border-left: 3px solid var(--accent); padding: 10px 14px; font-size: 14.5px; border-radius: 0 6px 6px 0;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .why b { color: var(--accent); }
+  .ok-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .ok-chips span { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--ok); background: var(--ok-soft); border: 1px solid #abefc6; border-radius: 6px; padding: 2px 8px;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  .modal { position: fixed; inset: 0; background: rgba(16,24,40,.45); display: none; place-items: center; z-index: 60; padding: 20px; }
+  .modal.on { display: grid; }
+  .modal-box { background: #fff; border-radius: 12px; padding: 26px 28px; max-width: 440px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,.2); }
+  .modal-box h3 { margin: 0 0 8px; font-size: 19px; }
+  .modal-box p { margin: 0 0 18px; color: var(--muted); font-size: 14.5px; }
+  .modal-box .row { display: flex; gap: 10px; justify-content: flex-end; }
+
+  .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px); background: var(--ink); color: #fff; font-size: 14px; padding: 10px 18px;
+    border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 70; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 720px) {
+    .paper { padding: 28px 20px; margin: 0; border-radius: 0; }
+    .student, .opts, .score-card { grid-template-columns: 1fr; }
+  }
+
+  @page { size: A4; margin: 14mm 14mm 16mm; }
+  @media print {
+    body { background: #fff; }
+    .toolbar, .rules, .finish, .toast, .student-error, .modal, .res-actions { display: none !important; }
+    .paper { margin: 0; padding: 0; border: 0; box-shadow: none; max-width: none; }
+    .print-meta { display: flex; gap: 22px; flex-wrap: wrap; font-size: 12px; color: #333; margin-top: 10px; }
+    .section { margin-top: 26px; } .section-head { break-after: avoid; }
+    .q, .rv { padding: 12px 0; }
+    .field input { border-bottom: 1px solid #000; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <a class="tb-back" href="../../" title="ყველა ტესტი">←</a>
+    <div class="tb-item"><span class="tb-label" id="timerLabel">დარჩენილი დრო</span><span class="tb-value" id="timer">--:--</span></div>
+    <div class="tb-item"><span class="tb-label" id="progLabel">პასუხი</span><span class="tb-value" id="progress">0 / 0</span></div>
+    <div class="tb-spacer"></div>
+    <button class="btn finish-btn" id="finishTop" type="button">დასრულება</button>
+  </div>
+</div>
+
+<main class="paper">
+  <header class="exam-head">
+    <div class="eyebrow">შუალედური გამოცდა</div>
+    <h1>Backend: C#, SQL, EF Core, Web API</h1>
+    <div class="exam-meta"><span>C# · SQL · EF Core · REST · Controllers · DTO და Mapping · Dependency Injection</span></div>
+    <div class="exam-meta" style="margin-top:4px">
+      <span>⏱ 120 წუთი</span><span><b id="qCount"></b> კითხვა</span><span>მაქსიმუმი: <b id="maxPts"></b> ქულა</span>
+    </div>
+    <div class="student">
+      <div class="field"><label for="fFirst">სახელი</label><input id="fFirst" autocomplete="off"></div>
+      <div class="field"><label for="fLast">გვარი</label><input id="fLast" autocomplete="off"></div>
+      <div class="field"><label for="fGroup">ჯგუფი</label><input id="fGroup" autocomplete="off"></div>
+    </div>
+    <div class="student-error" id="studentError"></div>
+    <div class="print-meta" id="printMeta"></div>
+    <div class="rules">
+      <b>ინსტრუქცია</b>
+      <ol>
+        <li>ყველა კითხვას 4 სავარაუდო პასუხი აქვს. სადაც წერია <b>„შესაძლოა რამდენიმე სწორი პასუხი“</b>, მონიშნე ყველა სწორი.</li>
+        <li>რამდენიმე სწორპასუხიან კითხვაზე ყოველი სწორი მონიშვნა ქულას მატებს, ყოველი არასწორი კი აკლებს (მინიმუმ 0).</li>
+        <li>პასუხები ავტომატურად ინახება, გვერდის განახლებისას არ დაიკარგება.</li>
+        <li>ბოლოს დააჭირე <b>„დასრულება“</b>. ამის შემდეგ პასუხებს ვეღარ შეცვლი. ნახავ ქულას და შეცდომების ახსნას, PDF კი ავტომატურად გაიხსნება: აირჩიე <b>Save as PDF</b> და ფაილი ატვირთე.</li>
+      </ol>
+    </div>
+  </header>
+
+  <section id="results"></section>
+  <div id="exam"></div>
+
+  <div class="finish">
+    <p>დარწმუნდი, რომ სახელი, გვარი და ჯგუფი შევსებულია და ყველა კითხვას უპასუხე. დასრულების შემდეგ პასუხებს ვეღარ შეცვლი.</p>
+    <button class="btn finish-btn" id="finishBtn" type="button">დასრულება</button>
+  </div>
+</main>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3>დავასრულოთ ტესტი?</h3>
+    <p id="modalText"></p>
+    <div class="row">
+      <button class="btn ghost" id="modalNo" type="button">დაბრუნება</button>
+      <button class="btn finish-btn" id="modalYes" type="button">დასრულება</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const EXAM = [{"id": "A", "title": "C#", "note": "კოდის წაკითხვა და C#-ის ცნებები.", "items": [{"id": "A1", "text": "რას დაბეჭდავს?", "code": "var nums = new List<int> { 5, 12, 8, 3, 20 };\nvar result = nums.Where(n => n > 6).Select(n => n * 2).ToList();\nConsole.WriteLine(string.Join(\", \", result));", "lang": "csharp", "options": ["`24, 16, 40`", "`12, 8, 20`", "`10, 24, 16, 6, 40`", "`24, 40`"]}, {"id": "A2", "text": "`Func<int, int, int> add = (a, b) => a + b;` — რომელი დებულებაა სწორი?", "multi": true, "options": ["`Func`-ის ბოლო ტიპი დასაბრუნებელი მნიშვნელობის ტიპია", "`add(2, 3)` აბრუნებს `5`-ს", "`Func`-ის ნაცვლად `Action<int, int, int>` ცვლილების გარეშე იმუშავებს", "`Func`-ს მხოლოდ ერთი პარამეტრი შეიძლება ჰქონდეს"]}, {"id": "A3", "text": "რას დაბეჭდავს?", "code": "public record ProductResponse(Guid Id, string Name, decimal Price);\n\nvar id = Guid.NewGuid();\nvar a = new ProductResponse(id, \"Phone\", 500);\nvar b = new ProductResponse(id, \"Phone\", 500);\n\nConsole.WriteLine(a == b);", "lang": "csharp", "options": ["`True`", "`False`", "კომპილაციის შეცდომა", "Runtime შეცდომა"]}, {"id": "A4", "text": "რას დაბეჭდავს?", "code": "public class Product\n{\n    public string Name { get; set; } = \"\";\n}\n\nvar p1 = new Product { Name = \"Phone\" };\nvar p2 = p1;\np2.Name = \"Laptop\";\n\nConsole.WriteLine(p1.Name);", "lang": "csharp", "options": ["`Phone`", "`Laptop`", "ცარიელ სტრიქონს", "კომპილაციის შეცდომა"]}, {"id": "A5", "text": "რა მოხდება?", "code": "var products = new List<Product>();\n\nvar p = products.FirstOrDefault(x => x.Name == \"Phone\");\nConsole.WriteLine(p.Name);", "lang": "csharp", "options": ["დაიბეჭდება ცარიელი სტრიქონი", "`InvalidOperationException`", "`NullReferenceException`", "დაიბეჭდება `Phone`"]}, {"id": "A6", "text": "როგორ უნდა გამოცხადდეს მეთოდი, რომ `product.ToResponse()` ჩაწერა იმუშაოს?", "options": ["`static` კლასში: `public static ProductResponse ToResponse(this Product p)`", "ჩვეულებრივ კლასში: `public ProductResponse ToResponse(Product p)`", "`static` კლასში: `public static ProductResponse ToResponse(Product this p)`", "ჩვეულებრივ (არა `static`) კლასში: `public static ProductResponse ToResponse(this Product p)`"]}, {"id": "A7", "text": "რას დაბეჭდავს?", "code": "Action log = () => Console.Write(\"A\");\nlog += () => Console.Write(\"B\");\nlog = () => Console.Write(\"C\");\n\nlog();", "lang": "csharp", "options": ["`ABC`", "`AB`", "`C`", "`CAB`"]}, {"id": "A8", "text": "რას დაბეჭდავს?", "code": "public class Counter\n{\n    public static int Total = 0;\n    public int Mine = 0;\n\n    public void Hit() { Total++; Mine++; }\n}\n\nvar a = new Counter();\nvar b = new Counter();\na.Hit(); a.Hit(); b.Hit();\n\nConsole.WriteLine($\"{Counter.Total} {b.Mine}\");", "lang": "csharp", "options": ["`2 1`", "`3 1`", "`3 3`", "`1 1`"]}]}, {"id": "B", "title": "SQL", "note": "ცხრილები: `Categories(Id, Name)` და `Products(Id, Name, Price, CategoryId)`.", "items": [{"id": "B1", "text": "ერთ კატეგორიას ბევრი პროდუქტი აქვს (1-N). სად იწერება Foreign Key?", "options": ["`Categories` ცხრილში: `ProductId`", "`Products` ცხრილში: `CategoryId`", "ორივე ცხრილში", "ცალკე მესამე ცხრილში"]}, {"id": "B2", "text": "რომელია Primary Key-ის თვისება?", "multi": true, "options": ["მნიშვნელობა უნიკალურია", "`NULL` ვერ იქნება", "ცხრილს რამდენიმე Primary Key შეიძლება ჰქონდეს", "აუცილებლად `int` უნდა იყოს"]}, {"id": "B3", "text": "რას უზრუნველყოფს Foreign Key `Products.CategoryId → Categories.Id`?", "options": ["`CategoryId` უნიკალური იქნება ყველა პროდუქტისთვის", "`CategoryId`-ში მხოლოდ არსებული კატეგორიის Id (ან `NULL`) ჩაიწერება", "კატეგორიის წაშლისას პროდუქტები ავტომატურად შეიქმნება", "მოთხოვნები უფრო სწრაფად შესრულდება"]}, {"id": "B4", "text": "Categories: (1, Phones), (2, Laptops), (3, Tablets). Products: iPhone→1, Galaxy→1, MacBook→2, Cable→`NULL`. რამდენ სტრიქონს დააბრუნებს?", "code": "SELECT p.Name, c.Name\nFROM Products p\nINNER JOIN Categories c ON p.CategoryId = c.Id;", "lang": "sql", "options": ["`3`", "`4`", "`5`", "`6`"]}, {"id": "B5", "text": "იგივე მონაცემები. რამდენ სტრიქონს დააბრუნებს?", "code": "SELECT p.Name, c.Name\nFROM Products p\nLEFT JOIN Categories c ON p.CategoryId = c.Id;", "lang": "sql", "options": ["`3`", "`4`", "`5`", "`6`"]}, {"id": "B6", "text": "იგივე მონაცემები. რა ეწერება Tablets-ის გასწვრივ?", "code": "SELECT c.Name, COUNT(p.Id) AS ProductCount\nFROM Categories c\nLEFT JOIN Products p ON p.CategoryId = c.Id\nGROUP BY c.Name;", "lang": "sql", "options": ["`0`", "`1`", "`NULL`", "Tablets შედეგში არ იქნება"]}, {"id": "B7", "text": "მიზანი: მხოლოდ iPhone-ის ფასის შეცვლა. რა პრობლემაა?", "code": "UPDATE Products\nSET Price = 999;", "lang": "sql", "options": ["`UPDATE`-ის ნაცვლად `INSERT` უნდა იყოს", "`WHERE` აკლია: ყველა პროდუქტის ფასი გახდება 999", "`SET` მხოლოდ ტექსტურ სვეტზე მუშაობს", "მოთხოვნა შეცდომას დააგდებს და არაფერი შეიცვლება"]}, {"id": "B8", "text": "ცხრილი `Orders(Id, CustomerName, CustomerPhone, ProductName, Date)`. ერთ მომხმარებელს 50 შეკვეთა აქვს. რომელი დებულებაა სწორი?", "multi": true, "options": ["მომხმარებლის მონაცემები 50-ჯერ მეორდება", "ტელეფონის შეცვლისას 50 სტრიქონი უნდა განახლდეს, ერთი თუ გამოგრჩა, მონაცემები აირევა", "გამოსავალი: ცალკე `Customers` ცხრილი და `Orders.CustomerId` FK", "გამოსავალი: `CustomerPhone2` სვეტის დამატება"]}]}, {"id": "C", "title": "EF Core", "note": "ORM, მიგრაციები, CRUD, Code First / Database First.", "items": [{"id": "C1", "text": "ORM-ში რა შეესაბამება ბაზაში კლასს, property-ს და ობიექტს?", "options": ["ბაზა · ცხრილი · სვეტი", "ცხრილი · სვეტი · ჩანაწერი (სტრიქონი)", "სვეტი · ჩანაწერი · ცხრილი", "ცხრილი · ჩანაწერი · სვეტი"]}, {"id": "C2", "text": "რით განსხვავდება `Add-Migration` და `Update-Database`?", "options": ["`Add-Migration` ცვლის ბაზას, `Update-Database` ქმნის ფაილს", "`Add-Migration` ქმნის მიგრაციის ფაილს (ნახაზს), `Update-Database` ამ ცვლილებას ბაზაში უშვებს", "ორივე ერთსა და იმავეს აკეთებს", "`Update-Database` მხოლოდ Database First-ში გამოიყენება"]}, {"id": "C3", "text": "პროგრამამ დაბეჭდა „დამატებულია!“, ცხრილი კი ცარიელია. რატომ?", "code": "var product = new Product { Name = \"Phone\", Price = 500 };\n\n_db.Products.Add(product);\nConsole.WriteLine(\"დამატებულია!\");", "lang": "csharp", "options": ["`Add`-ის ნაცვლად `Insert` უნდა იყოს", "`SaveChanges()` არ არის გამოძახებული", "`Id` ხელით უნდა მივანიჭოთ", "`Products` უნდა იყოს `Product`"]}, {"id": "C4", "text": "ბაზაში 10 000-ზე ძვირი პროდუქტი არ არის. რა მოხდება?", "code": "var p = _db.Products.First(p => p.Price > 10000);", "lang": "csharp", "options": ["`p` იქნება `null`", "შეცდომა: `InvalidOperationException`", "`p` იქნება ცარიელი `Product`", "დაბრუნდება ყველაზე ძვირი პროდუქტი"]}, {"id": "C5", "text": "რომელი დებულებაა სწორი ამ კოდზე?", "code": "var p = _db.Products.Find(id);\np.Price = 450;\n_db.SaveChanges();", "lang": "csharp", "multi": true, "options": ["`Update()`-ის გამოძახება საჭირო არ არის: Change Tracker-მა იცის, რა შეიცვალა", "`SaveChanges()` ბაზაში `UPDATE`-ს გაგზავნის", "`_db.Products.Update(p)`-ის გარეშე ცვლილება არ შეინახება", "თუ ასეთი `id` არ არსებობს, `p.Price`-ზე `NullReferenceException` მოხდება"]}, {"id": "C6", "text": "რა არის ჭეშმარიტების წყარო Code First-ში და Database First-ში?", "options": ["ორივეში ბაზა", "Code First: C# კლასები · Database First: ბაზა", "Code First: ბაზა · Database First: C# კლასები", "ორივეში მიგრაციის ფაილები"]}, {"id": "C7", "text": "ბანკს აქვს 15 წლის ბაზა, რომელსაც 5 სხვა პროგრამა იყენებს. ახალ აპს წერ. რომელ მიდგომას აირჩევ?", "options": ["Code First: მიგრაციით ბაზას თავიდან შევქმნით", "Database First: `Scaffold-DbContext`-ით კლასებს არსებული ბაზიდან დავაგენერირებთ", "Code First, `Update-Database`-ით ძველ ბაზაზე", "EF Core აქ საერთოდ ვერ გამოიყენება"]}, {"id": "C8", "text": "ბაზა შეიცვალა, გაუშვი `Scaffold-DbContext ... -Force` და `Product` კლასში შენ მიერ დამატებული მეთოდი წაიშალა. როგორ ავიცილოთ თავიდან?", "options": ["`-Force`-ის გარეშე გაშვება", "საკუთარი კოდი ცალკე ფაილში, `partial class Product`-ში, იგივე namespace-ით", "გენერირებული ფაილის `readonly`-დ მონიშვნა", "`Add-Migration`-ის გამოყენება `Scaffold`-ის ნაცვლად"]}, {"id": "C9", "text": "`Product`-ს დაამატე `public int CategoryId` და FK. ცხრილში უკვე იყო პროდუქტები. `Update-Database` FK-ის შეცდომით ჩავარდა. რატომ?", "options": ["ძველ პროდუქტებს `CategoryId = 0` ჩაეწერა, Id = 0 კატეგორია კი არ არსებობს", "`int` ტიპის სვეტზე FK ვერ შეიქმნება", "ჯერ `Remove-Migration` უნდა გაგვეშვა", "კატეგორიის ცხრილს PK არ აქვს"]}, {"id": "C10", "text": "რომელი დებულებაა სწორი?", "code": "_db.Products\n   .Where(p => p.Price == 0)\n   .ExecuteDelete();", "lang": "csharp", "multi": true, "options": ["ბაზაში ერთი `DELETE` ბრძანება იგზავნება", "`SaveChanges()` საჭირო არ არის", "ჯერ ყველა პროდუქტი მეხსიერებაში იტვირთება, მერე იშლება", "თითო პროდუქტზე `Remove()` უნდა გამოვიძახოთ"]}]}, {"id": "D", "title": "ASP.NET Core Web API", "note": "REST, Controllers, DTO, Mapping, Dependency Injection.", "items": [{"id": "D1", "text": "რა არის Endpoint?", "options": ["სერვერის IP მისამართი", "HTTP მეთოდი + მისამართი, რომელიც Backend-ში კონკრეტულ ფუნქციას იძახებს", "ბაზის ცხრილი", "Controller-ის ფაილის სახელი"]}, {"id": "D2", "text": "REST-ის მიხედვით როგორ შევქმნათ ახალი მომხმარებელი?", "options": ["`GET /api/users/create` → 200 OK", "`POST /api/users` → 201 Created", "`PUT /api/users` → 200 OK", "`POST /api/createUser` → 204 No Content"]}, {"id": "D3", "text": "რა განსხვავებაა `PUT`-სა და `PATCH`-ს შორის?", "options": ["`PUT` ქმნის, `PATCH` შლის", "`PUT` რესურსს მთლიანად ანაცვლებს, `PATCH` მხოლოდ გაგზავნილ ველებს ცვლის", "`PATCH` მთლიანად ანაცვლებს, `PUT` ნაწილობრივ ცვლის", "განსხვავება არ არის"]}, {"id": "D4", "text": "რომელი სტატუს კოდი ნიშნავს კლიენტის შეცდომას?", "multi": true, "options": ["`400 Bad Request`", "`404 Not Found`", "`500 Internal Server Error`", "`201 Created`"]}, {"id": "D5", "text": "`DELETE /api/products/{id}` წარმატებით შესრულდა. რომელი პასუხია ყველაზე სწორი REST-ის მიხედვით?", "options": ["`200 OK` წაშლილი ობიექტით", "`201 Created`", "`204 No Content`", "`404 Not Found`"]}, {"id": "D6", "text": "ბაზის მიერთებამდე პროდუქტების სია Controller-ში `static` იყო. რატომ?", "options": ["`static` სია უფრო სწრაფია", "Controller ყოველ მოთხოვნაზე თავიდან იქმნება, `static` სია კი კლასს ეკუთვნის და ყველა მოთხოვნას ერთი აქვს", "C#-ში სია მხოლოდ `static` შეიძლება იყოს", "Swagger-ს `static` სია სჭირდება"]}, {"id": "D7", "text": "`GET /api/products/{id}` არარსებული `id`-ით. რას დააბრუნებს?", "code": "[HttpGet(\"{id}\")]\npublic IActionResult GetById(Guid id)\n{\n    var product = _db.Products.Find(id);\n\n    if (product is null)\n        return NotFound();\n\n    return Ok(product.ToResponse());\n}", "lang": "csharp", "options": ["`200 OK` ცარიელი ობიექტით", "`404 Not Found`", "`500 Internal Server Error`", "`204 No Content`"]}, {"id": "D8", "text": "`User` Entity-ს აქვს `PasswordHash` ველი. რა პრობლემაა?", "code": "[HttpGet]\npublic IActionResult GetAll()\n{\n    return Ok(_db.Users.ToList());\n}", "lang": "csharp", "multi": true, "options": ["`PasswordHash` კლიენტთან გაიპარება", "ცხრილის ცვლილება (სვეტის გადარქმევა) კლიენტს გატეხავს", "გამოსავალი: Entity-ის `UserResponse` DTO-ზე map-ვა და მისი დაბრუნება", "`Ok()`-ს სიის დაბრუნება არ შეუძლია"]}, {"id": "D9", "text": "რატომ არ აქვს `CreateProductRequest` DTO-ს `Id` ველი?", "options": ["`record`-ს `Guid` ველი ვერ ექნება", "Id-ს სერვერი ანიჭებს, კლიენტმა სერვერის ველები არ უნდა შეავსოს", "Id მხოლოდ Response-ში შეიძლება იყოს, ეს C#-ის წესია", "Swagger Id-ს ავტომატურად ამატებს"]}, {"id": "D10", "text": "Mapperly-ში mapper-ის მეთოდს სხეული არ აქვს (`public static partial ProductResponse ToResponse(this Product p);`). სად არის კოდი?", "options": ["Runtime-ში reflection-ით იქმნება ყოველ გამოძახებაზე", "Mapperly კომპილაციისას თავად წერს (`*.g.cs` ფაილი)", "კოდი არ არის, მეთოდი ცარიელ ობიექტს აბრუნებს", "NuGet პაკეტის DLL-შია, უცვლელად"]}, {"id": "D11", "text": "რა პრობლემაა ამ კოდში?", "code": "public class ProductsController : ControllerBase\n{\n    private readonly DataContext _db = new DataContext();\n\n    // ... actions\n}", "lang": "csharp", "multi": true, "options": ["DataContext-ს არავინ ხურავს, კავშირები გროვდება", "DataContext-ის შექმნის წესი ყველა Controller-შია მიმოფანტული", "შეცვლა (მაგ. connection string) ყველა Controller-ში მოგვიწევს", "C#-ში `new`-ის გამოყენება ველში აკრძალულია"]}, {"id": "D12", "text": "აპი გაეშვა, მაგრამ მოთხოვნაზე შეცდომაა: „Unable to resolve service for type 'DataContext' while attempting to activate 'ProductsController'“. რა აკლია?", "options": ["Controller-ს `[ApiController]` ატრიბუტი", "`builder.Services.AddDbContext<DataContext>(...)` რეგისტრაცია `Program.cs`-ში", "მიგრაცია", "`new DataContext()` Controller-ში"]}, {"id": "D13", "text": "რას ნიშნავს `Scoped` lifetime?", "options": ["ერთი ობიექტი მთელ აპლიკაციაზე", "ერთი ობიექტი თითო HTTP მოთხოვნაზე", "ახალი ობიექტი ყოველ ჯერზე, როცა ვინმე ითხოვს", "ობიექტი არასდროს იქმნება"]}, {"id": "D14", "text": "რა მოხდება, თუ DataContext-ს Singleton-ად დავარეგისტრირებთ?", "options": ["აპი უფრო სწრაფი გახდება, პრობლემა არ არის", "ერთი DataContext ყველა მომხმარებლისთვის: Change Tracker იზრდება, ერთდროულ მოთხოვნებზე „A second operation was started...“ შეცდომა", "მიგრაციები აღარ იმუშავებს", "ყოველ მოთხოვნაზე ახალი ბაზა შეიქმნება"]}]}];
+const POINTS = 2.5;
+const DURATION_MIN = 120;
+const K = "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";
+const S = "le-64ae49b6440b";
+const LETTERS = ['ა', 'ბ', 'გ', 'დ'];
+const STORE_KEY = 'exam:' + location.pathname;
+
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const inline = s => esc(s).replace(/`([^`]+)`/g, '<code class="inline">$1</code>');
+const pad = n => String(n).padStart(2, '0');
+const fmtPts = n => (Math.round(n * 100) / 100).toString();
+const QUESTIONS = EXAM.flatMap(s => s.items.map(q => ({ ...q, sec: s.id })));
+const MAX = QUESTIONS.length * POINTS;
+
+/* ---------- highlight ---------- */
+const KW = {
+  csharp: /(\/\/[^\n]*)|(\$?"(?:[^"\\\n]|\\.)*")|(\b\d+(?:\.\d+)?\b)|\b(int|double|decimal|string|bool|void|static|return|if|else|for|foreach|in|while|new|true|false|var|public|private|readonly|class|record|partial|this|null|is|get|set)\b|\b(Console|List|Guid|Action|Func|IActionResult|ControllerBase|DataContext|Product|ProductResponse|Counter)\b|(\[[A-Za-z]+(?:\("[^"]*"\))?\])/g,
+  sql: /(--[^\n]*)|('(?:[^'\\\n]|\\.)*')|(\b\d+\b)|\b(SELECT|FROM|WHERE|INNER|LEFT|JOIN|ON|GROUP|BY|ORDER|AS|UPDATE|SET|DELETE|INSERT|INTO|VALUES|COUNT|NULL|AND|OR)\b()()/gi,
+};
+function highlight(src, lang) {
+  const re = new RegExp(KW[lang] || KW.csharp);
+  let out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    if (!m[0]) { re.lastIndex++; continue; }
+    out += esc(src.slice(last, m.index));
+    const cls = m[1] ? 'c' : m[2] ? 's' : m[3] ? 'n' : m[4] ? 'k' : m[5] ? 't' : 'a';
+    out += `<span class="${cls}">${esc(m[0])}</span>`;
+    last = re.lastIndex;
+  }
+  out += esc(src.slice(last));
+  return out.split('\n').map(l => `<span class="line">${l || ' '}</span>`).join('');
+}
+const codeBlock = (src, lang) => `<pre class="code">${highlight(src, lang)}</pre>`;
+
+/* ---------- state ---------- */
+let state = { meta: { first: '', last: '', group: '' }, answers: {}, order: {}, start: null, finished: null };
+try { const saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); if (saved) state = Object.assign(state, saved); } catch (e) {}
+if (!state.start) state.start = Date.now();
+for (const q of QUESTIONS) {
+  if (!Array.isArray(state.order[q.id]) || state.order[q.id].length !== q.options.length) {
+    const p = q.options.map((_, i) => i);
+    for (let i = p.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; }
+    state.order[q.id] = p;
+  }
+}
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
+save();
+
+/* ---------- render exam ---------- */
+function renderExam() {
+  $('#qCount').textContent = QUESTIONS.length;
+  $('#maxPts').textContent = fmtPts(MAX);
+  $('#exam').innerHTML = EXAM.map(sec => `
+    <section class="section">
+      <div class="section-head"><h2><span class="sec-letter">${sec.id}</span>${esc(sec.title)}</h2>
+        <span class="section-pts">${fmtPts(sec.items.length * POINTS)} ქულა</span></div>
+      <p class="section-note">${inline(sec.note)}</p>
+      ${sec.items.map(q => {
+        const type = q.multi ? 'checkbox' : 'radio';
+        return `<article class="q" id="q-${q.id}">
+          <div class="q-head"><span class="qid">${q.id}</span><span class="qpts">${fmtPts(POINTS)} ქულა</span>
+            ${q.multi ? '<span class="badge">შესაძლოა რამდენიმე სწორი პასუხი</span>' : ''}</div>
+          ${q.text ? `<p class="qtext">${inline(q.text)}</p>` : ''}
+          ${q.code ? codeBlock(q.code, q.lang) : ''}
+          <div class="opts">${state.order[q.id].map((orig, pos) => `
+            <label class="opt ${q.multi ? 'check' : 'radio'}">
+              <input type="${type}" name="${q.id}" value="${orig}">
+              <span class="letter">${LETTERS[pos]}</span><span class="otext">${inline(q.options[orig])}</span>
+            </label>`).join('')}</div>
+        </article>`;
+      }).join('')}
+    </section>`).join('');
+}
+
+function restore() {
+  $('#fFirst').value = state.meta.first || '';
+  $('#fLast').value = state.meta.last || '';
+  $('#fGroup').value = state.meta.group || '';
+  for (const [qid, vals] of Object.entries(state.answers))
+    vals.forEach(v => { const i = document.querySelector(`input[name="${qid}"][value="${v}"]`); if (i) i.checked = true; });
+  syncOptionClasses(); updateProgress();
+}
+function syncOptionClasses() {
+  document.querySelectorAll('.opt').forEach(l => l.classList.toggle('checked', l.querySelector('input').checked));
+}
+const answeredCount = () => QUESTIONS.filter(q => (state.answers[q.id] || []).length).length;
+function updateProgress() {
+  if (state.finished) return;
+  $('#progress').textContent = `${answeredCount()} / ${QUESTIONS.length}`;
+}
+
+document.addEventListener('change', e => {
+  const inp = e.target;
+  if (state.finished || !inp.matches('.opt input')) return;
+  state.answers[inp.name] = [...document.querySelectorAll(`input[name="${inp.name}"]:checked`)].map(i => +i.value);
+  syncOptionClasses(); updateProgress(); save();
+});
+document.addEventListener('input', e => {
+  const map = { fFirst: 'first', fLast: 'last', fGroup: 'group' };
+  const k = map[e.target.id]; if (!k || state.finished) return;
+  state.meta[k] = e.target.value; e.target.classList.remove('invalid'); save();
+});
+
+/* ---------- grading ---------- */
+function decodeKey() {
+  const raw = atob(K), sb = new TextEncoder().encode(S), bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) ^ sb[i % sb.length];
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+function grade() {
+  const key = decodeKey();
+  return QUESTIONS.map(q => {
+    const correct = key[q.id].a, picked = state.answers[q.id] || [];
+    let frac;
+    if (!q.multi) frac = picked.length === 1 && picked[0] === correct[0] ? 1 : 0;
+    else {
+      const hits = picked.filter(p => correct.includes(p)).length, wrong = picked.length - hits;
+      frac = Math.max(0, (hits - wrong) / correct.length);
+    }
+    const status = !picked.length ? 'empty' : frac === 1 ? 'ok' : frac > 0 ? 'partial' : 'wrong';
+    return { id: q.id, sec: q.sec, picked, correct, why: key[q.id].why, pts: POINTS * frac, status };
+  });
+}
+
+/* ---------- results ---------- */
+const STATUS = { wrong: 'არასწორი', partial: 'ნაწილობრივ', empty: 'პასუხის გარეშე' };
+function renderResults() {
+  const r = state.finished.results;
+  const total = r.reduce((a, x) => a + x.pts, 0);
+  const pct = Math.round(total / MAX * 100);
+  const okCount = r.filter(x => x.status === 'ok').length;
+  const bySec = EXAM.map(s => {
+    const xs = r.filter(x => x.sec === s.id), got = xs.reduce((a, x) => a + x.pts, 0), max = xs.length * POINTS;
+    return `<tr><td><b>${s.id}</b> · ${esc(s.title)}</td><td style="width:40%"><div class="bar"><i style="width:${Math.round(got / max * 100)}%"></i></div></td>
+      <td>${fmtPts(got)} / ${fmtPts(max)}</td></tr>`;
+  }).join('');
+
+  const bad = r.filter(x => x.status !== 'ok');
+  const qById = Object.fromEntries(QUESTIONS.map(q => [q.id, q]));
+  const review = bad.map(x => {
+    const q = qById[x.id];
+    const items = state.order[q.id].map((orig, pos) => {
+      const isC = x.correct.includes(orig), isP = x.picked.includes(orig);
+      const cls = isC ? 'correct' : isP ? 'picked-wrong' : '';
+      const mk = isC ? '✓' : isP ? '✗' : '';
+      return `<li class="${cls}"><span class="mk">${mk}</span><span><b>${LETTERS[pos]}.</b> ${inline(q.options[orig])}</span>${isP ? '<span class="you">შენი პასუხი</span>' : ''}</li>`;
+    }).join('');
+    return `<article class="rv">
+      <div class="q-head"><span class="qid">${q.id}</span><span class="rv-status ${x.status}">${STATUS[x.status]}</span>
+        <span class="qpts">${fmtPts(x.pts)} / ${fmtPts(POINTS)} ქულა</span></div>
+      ${q.text ? `<p class="qtext">${inline(q.text)}</p>` : ''}
+      ${q.code ? codeBlock(q.code, q.lang) : ''}
+      <ul class="rv-list">${items}</ul>
+      <div class="why"><b>რატომ:</b> ${inline(x.why)}</div>
+    </article>`;
+  }).join('');
+
+  $('#results').innerHTML = `
+    <div class="score-card">
+      <div><div class="score-big">${fmtPts(total)}<small> / ${fmtPts(MAX)}</small></div>
+        <div class="score-sub">${pct}% · სწორი ${okCount} / ${r.length}</div></div>
+      <table class="breakdown">${bySec}</table>
+    </div>
+    <div class="res-actions"><button class="btn" id="pdfAgain" type="button">PDF-ად გადმოწერა</button></div>
+    ${bad.length ? `<section class="section"><div class="section-head"><h2>შეცდომების განხილვა</h2><span class="section-pts">${bad.length} კითხვა</span></div>${review}</section>` : ''}
+    <section class="section"><div class="section-head"><h2>სწორად უპასუხე</h2><span class="section-pts">${okCount} კითხვა</span></div>
+      <div class="ok-chips">${r.filter(x => x.status === 'ok').map(x => `<span>${x.id}</span>`).join('') || '—'}</div></section>`;
+  $('#pdfAgain').addEventListener('click', exportPdf);
+
+  document.body.classList.add('done');
+  document.querySelectorAll('.field input').forEach(i => i.disabled = true);
+  $('#timerLabel').textContent = 'ქულა';
+  $('#timer').textContent = `${fmtPts(total)}/${fmtPts(MAX)}`;
+  $('#timer').classList.remove('over');
+  $('#progLabel').textContent = 'სწორი';
+  $('#progress').textContent = `${okCount} / ${r.length}`;
+  $('#finishTop').textContent = 'PDF-ად გადმოწერა';
+  fillPrintMeta();
+}
+
+/* ---------- finish flow ---------- */
+function validateStudent() {
+  const fields = [['fFirst', 'first'], ['fLast', 'last'], ['fGroup', 'group']];
+  const missing = fields.filter(([, k]) => !(state.meta[k] || '').trim());
+  fields.forEach(([id]) => $('#' + id).classList.remove('invalid'));
+  if (!missing.length) { $('#studentError').textContent = ''; return true; }
+  missing.forEach(([id]) => $('#' + id).classList.add('invalid'));
+  $('#studentError').textContent = 'შეავსე სახელი, გვარი და ჯგუფი.';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  $('#' + missing[0][0]).focus();
+  return false;
+}
+function askFinish() {
+  if (state.finished) return exportPdf();
+  if (!validateStudent()) return;
+  const left = QUESTIONS.length - answeredCount();
+  $('#modalText').innerHTML = left
+    ? `<b style="color:var(--bad)">${left} კითხვა უპასუხოა.</b> დასრულების შემდეგ პასუხებს ვეღარ შეცვლი.`
+    : 'ყველა კითხვას უპასუხე. დასრულების შემდეგ პასუხებს ვეღარ შეცვლი.';
+  $('#modal').classList.add('on');
+}
+$('#modalNo').addEventListener('click', () => $('#modal').classList.remove('on'));
+$('#modalYes').addEventListener('click', () => {
+  $('#modal').classList.remove('on');
+  state.finished = { at: Date.now(), results: grade() };
+  save();
+  renderResults();
+  window.scrollTo({ top: 0 });
+  setTimeout(exportPdf, 350);
+});
+$('#finishBtn').addEventListener('click', askFinish);
+$('#finishTop').addEventListener('click', askFinish);
+
+/* ---------- PDF ---------- */
+const fmt = d => `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function fillPrintMeta() {
+  const end = state.finished ? new Date(state.finished.at) : new Date();
+  $('#printMeta').innerHTML =
+    `<span>დაწყება: <b>${fmt(new Date(state.start))}</b></span><span>დასრულება: <b>${fmt(end)}</b></span>` +
+    `<span>დახარჯული დრო: <b>${Math.round((end - state.start) / 60000)} წთ</b></span>`;
+}
+let originalTitle = document.title;
+function exportPdf() {
+  fillPrintMeta();
+  originalTitle = document.title;
+  document.title = `API_${state.meta.last}_${state.meta.first}_${state.meta.group}`.replace(/\s+/g, '_');
+  window.print();
+}
+window.addEventListener('afterprint', () => { document.title = originalTitle; });
+
+/* ---------- კოპირების დაბლოკვა ---------- */
+const isEditable = t => { const n = t && t.nodeType === 3 ? t.parentElement : t; return !!(n && n.closest && n.closest('input')); };
+let toastTimer;
+function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 1800); }
+['copy', 'cut'].forEach(ev => document.addEventListener(ev, e => { if (!isEditable(e.target)) { e.preventDefault(); toast('კოპირება გამორთულია'); } }));
+document.addEventListener('contextmenu', e => { if (!isEditable(e.target)) e.preventDefault(); });
+document.addEventListener('selectstart', e => { if (!isEditable(e.target)) e.preventDefault(); });
+document.addEventListener('dragstart', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  const k = (e.key || '').toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && ['c', 'x', 'a', 's', 'u'].includes(k) && !isEditable(e.target)) { e.preventDefault(); if (k === 'c' || k === 'x') toast('კოპირება გამორთულია'); }
+  if (e.key === 'F12') e.preventDefault();
+});
+
+/* ---------- timer ---------- */
+function tick() {
+  if (state.finished) return;
+  const left = Math.round((state.start + DURATION_MIN * 60000 - Date.now()) / 1000), el = $('#timer');
+  if (left >= 0) { el.textContent = `${pad(Math.floor(left / 60))}:${pad(left % 60)}`; el.classList.remove('over'); }
+  else { const o = -left; el.textContent = `+${pad(Math.floor(o / 60))}:${pad(o % 60)}`; el.classList.add('over'); }
+}
+setInterval(tick, 1000); tick();
+
+/* ---------- init ---------- */
+renderExam();
+restore();
+if (state.finished) renderResults();
+</script>
+</body>
+</html>

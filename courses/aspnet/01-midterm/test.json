@@ -1,0 +1,7 @@
+{
+  "title": "Backend შუალედური: C#, SQL, EF Core, Web API",
+  "topics": ["C#", "SQL", "EF Core", "REST", "Controllers", "DTO", "DI"],
+  "duration": 120,
+  "questions": 40,
+  "points": 100
+}

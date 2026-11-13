@@ -63,7 +63,7 @@ footer{color:var(--muted);font-size:14px;margin-top:40px;border-top:1px solid va
 <footer>ტესტის ბოლოს დააჭირე „PDF-ად გადმოწერა“ → Save as PDF და ფაილი ატვირთე. პასუხები ბრაუზერში ინახება — განახლებისას არ იკარგება.</footer>
 </main>
 <script>
-const CATALOG = [{"slug": "csharp", "title": "C#", "order": 1, "tests": [{"slug": "01-basics", "num": "01", "title": "C# საფუძვლები", "topics": ["ცვლადები", "ოპერატორები", "პირობები", "ციკლები", "მასივები", "მეთოდები"], "duration": 120, "questions": 32, "points": 100}]}];
+const CATALOG = [{"slug": "csharp", "title": "C#", "order": 1, "tests": [{"slug": "01-basics", "num": "01", "title": "C# საფუძვლები", "topics": ["ცვლადები", "ოპერატორები", "პირობები", "ციკლები", "მასივები", "მეთოდები"], "duration": 120, "questions": 32, "points": 100}]}, {"slug": "aspnet", "title": "ASP.NET", "order": 2, "tests": [{"slug": "01-midterm", "num": "01", "title": "Backend შუალედური: C#, SQL, EF Core, Web API", "topics": ["C#", "SQL", "EF Core", "REST", "Controllers", "DTO", "DI"], "duration": 120, "questions": 40, "points": 100}]}];
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const total = CATALOG.reduce((n, c) => n + c.tests.length, 0);
 document.getElementById('sub').textContent = `${total} ტესტი`;
