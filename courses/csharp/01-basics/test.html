@@ -187,6 +187,30 @@
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+  /* ---------- intro ---------- */
+  #intro { display: none; min-height: 100vh; padding: 48px 20px 80px; }
+  body.intro #intro { display: block; }
+  body.intro .toolbar, body.intro .paper { display: none; }
+  .intro-card { max-width: 760px; margin: 0 auto; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 44px 52px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.05); }
+  .intro-back { display: inline-block; font-size: 14px; color: var(--muted); text-decoration: none; margin-bottom: 18px; }
+  .intro-back:hover { color: var(--ink); }
+  .intro-stats { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0 6px; }
+  .intro-stats span { font-size: 14px; background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 5px 14px; font-weight: 600; }
+  .intro-card h2 { font-size: 17px; margin: 30px 0 4px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  .intro-rules { margin: 12px 0 0; padding-left: 22px; font-size: 15px; color: #2b3039; }
+  .intro-rules li { margin: 7px 0; padding-left: 4px; }
+  .agree { display: flex; gap: 10px; align-items: flex-start; margin-top: 24px; font-size: 15px; cursor: pointer; padding: 12px 14px;
+    border: 1.5px solid var(--line); border-radius: 8px; }
+  .agree input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent); flex: none; }
+  .agree.invalid { border-color: var(--warn); background: #fff5f4; }
+  .start-row { display: flex; align-items: center; gap: 16px; margin-top: 22px; flex-wrap: wrap; }
+  .start-row .btn { font-size: 16px; padding: 13px 28px; }
+  .start-row small { color: var(--muted); font-size: 13.5px; }
+  .student-line { margin-top: 16px; font-size: 15px; display: flex; gap: 22px; flex-wrap: wrap; }
+  .student-line span { color: var(--muted); }
+  .student-line b { color: var(--ink); }
+
   @media (max-width: 720px) {
     .paper { padding: 28px 20px; margin: 0; border-radius: 0; }
     .student { grid-template-columns: 1fr; }
@@ -197,7 +221,7 @@
   @page { size: A4; margin: 14mm 14mm 16mm; }
   @media print {
     body { background: #fff; }
-    .toolbar, .rules, .finish, .toast, .student-error { display: none !important; }
+    #intro, .toolbar, .rules, .finish, .toast, .student-error { display: none !important; }
     .paper { margin: 0; padding: 0; border: 0; box-shadow: none; max-width: none; }
     .section { margin-top: 26px; }
     .section-head { break-after: avoid; }
@@ -227,6 +251,42 @@
 </head>
 <body>
 
+<section id="intro">
+  <div class="intro-card">
+    <a class="intro-back" href="../../">← ყველა ტესტი</a>
+    <div class="eyebrow">შემაჯამებელი გამოცდა</div>
+    <h1>C# საფუძვლები</h1>
+    <div class="exam-meta"><span>ცვლადები · ოპერატორები · პირობები · ციკლები · მასივები · მეთოდები</span></div>
+    <div class="intro-stats" id="introStats"></div>
+
+    <h2>შენი მონაცემები</h2>
+    <div class="student">
+      <div class="field"><label for="fFirst">სახელი</label><input id="fFirst" autocomplete="off"></div>
+      <div class="field"><label for="fLast">გვარი</label><input id="fLast" autocomplete="off"></div>
+      <div class="field"><label for="fGroup">ჯგუფი</label><input id="fGroup" autocomplete="off"></div>
+    </div>
+
+    <h2>წესები და პირობები</h2>
+    <ol class="intro-rules">
+      <li>ტესტს აქვს 4 ნაწილი, სულ <b>100 ქულა</b>. დრო: <b>120 წუთი</b>. ტაიმერი „დაწყებას“ დაჭერისთანავე ირთვება და გვერდის განახლებისას არ ჩერდება.</li>
+      <li><b>A, B, C ნაწილები:</b> თითო კითხვას 4 სავარაუდო პასუხი აქვს. აირჩიე სწორი. სადაც წერია <b>„შესაძლოა რამდენიმე სწორი პასუხი“</b>, მონიშნე ყველა სწორი.</li>
+      <li><b>D ნაწილი:</b> კოდი დაწერე <b>Visual Studio-ში</b>, გაუშვი, შეამოწმე და მზა კოდი ჩასვი შესაბამის ველში (მეთოდი და მისი გამოძახება).</li>
+      <li>ტექსტის კოპირება, მონიშვნა და მარჯვენა ღილაკი გამორთულია. კოდის ველებში ჩასმა (Ctrl+V) მუშაობს.</li>
+      <li>პასუხები ავტომატურად ინახება ამ ბრაუზერში. გვერდის განახლება უსაფრთხოა, მაგრამ <b>ბრაუზერის მონაცემები არ წაშალო</b> და ტესტი სხვა ბრაუზერში არ გახსნა.</li>
+      <li>დაწყების შემდეგ სახელს, გვარს და ჯგუფს ვეღარ შეცვლი.</li>
+      <li>დრო რომ ამოიწურება, ტესტი არ დაიკეტება, მაგრამ გადაცილება წითლად აითვლება და PDF-ში ჩაიწერება.</li>
+      <li>ბოლოს დააჭირე <b>„PDF-ად გადმოწერა“</b>, ფანჯარაში აირჩიე <b>Save as PDF</b>, შეინახე და ფაილი ატვირთე. შეფასებას ლექტორი გააკეთებს.</li>
+    </ol>
+
+    <label class="agree" id="agreeBox"><input type="checkbox" id="agree"><span>წესები წავიკითხე და ვეთანხმები</span></label>
+    <div class="student-error" id="studentError"></div>
+    <div class="start-row">
+      <button class="btn" id="startBtn" type="button">ტესტის დაწყება</button>
+      <small>დაჭერისთანავე ჩაირთვება ტაიმერი.</small>
+    </div>
+  </div>
+</section>
+
 <div class="toolbar">
   <div class="toolbar-inner">
     <a class="tb-back" href="../../" title="ყველა ტესტი">←</a>
@@ -255,23 +315,9 @@
       <span>მაქსიმუმი: <b id="maxPts">100</b> ქულა</span>
     </div>
 
-    <div class="student">
-      <div class="field"><label for="fFirst">სახელი</label><input id="fFirst" autocomplete="off"></div>
-      <div class="field"><label for="fLast">გვარი</label><input id="fLast" autocomplete="off"></div>
-      <div class="field"><label for="fGroup">ჯგუფი</label><input id="fGroup" autocomplete="off"></div>
-    </div>
-    <div class="student-error" id="studentError"></div>
+    <div class="student-line"><span>სტუდენტი: <b id="stName"></b></span><span>ჯგუფი: <b id="stGroup"></b></span></div>
     <div class="print-meta" id="printMeta"></div>
 
-    <div class="rules">
-      <b>ინსტრუქცია</b>
-      <ol>
-        <li>A, B და C ნაწილებში აირჩიე სწორი პასუხი. სადაც წერია <b>„შესაძლოა რამდენიმე სწორი პასუხი“</b>, მონიშნე ყველა სწორი.</li>
-        <li>D ნაწილის კოდი დაწერე <b>Visual Studio-ში</b>, გაუშვი, შეამოწმე და მზა კოდი ჩასვი შესაბამის ველში.</li>
-        <li>პასუხები ავტომატურად ინახება. გვერდის განახლებისას არ დაიკარგება.</li>
-        <li>ბოლოს დააჭირე <b>„PDF-ად გადმოწერა“</b>, ფანჯარაში აირჩიე <b>Save as PDF</b> და ფაილი ატვირთე.</li>
-      </ol>
-    </div>
   </header>
 
   <div id="exam"></div>
@@ -530,7 +576,10 @@ try {
   const saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
   if (saved) state = Object.assign(state, saved);
 } catch (e) {}
-if (!state.start) state.start = Date.now();
+if (!state.started) {
+  if (Object.keys(state.answers || {}).length || Object.values(state.code || {}).some(v => (v || '').trim())) state.started = true;
+  else state.start = null;
+}
 function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
 save();
 
@@ -592,6 +641,8 @@ function restore() {
   $('#fFirst').value = state.meta.first || '';
   $('#fLast').value = state.meta.last || '';
   $('#fGroup').value = state.meta.group || '';
+  $('#stName').textContent = `${state.meta.first || ''} ${state.meta.last || ''}`.trim();
+  $('#stGroup').textContent = state.meta.group || '';
   for (const [qid, vals] of Object.entries(state.answers)) {
     vals.forEach(v => {
       const inp = document.querySelector(`input[name="${qid}"][value="${v}"]`);
@@ -628,9 +679,9 @@ document.addEventListener('change', e => {
 document.addEventListener('input', e => {
   const t = e.target;
   if (t.matches('textarea.answer')) { state.code[t.dataset.q] = t.value; updateProgress(); save(); }
-  if (t.id === 'fFirst') { state.meta.first = t.value; t.classList.remove('invalid'); save(); }
-  if (t.id === 'fLast') { state.meta.last = t.value; t.classList.remove('invalid'); save(); }
-  if (t.id === 'fGroup') { state.meta.group = t.value; t.classList.remove('invalid'); save(); }
+  if (t.id === 'fFirst' && !state.started) { state.meta.first = t.value; t.classList.remove('invalid'); save(); }
+  if (t.id === 'fLast' && !state.started) { state.meta.last = t.value; t.classList.remove('invalid'); save(); }
+  if (t.id === 'fGroup' && !state.started) { state.meta.group = t.value; t.classList.remove('invalid'); save(); }
 });
 
 /* Tab ჩასმა textarea-ში */
@@ -673,6 +724,7 @@ document.addEventListener('keydown', e => {
 /* ---------- ტაიმერი ---------- */
 const pad = n => String(n).padStart(2, '0');
 function tick() {
+  if (!state.started) { $('#timer').textContent = '120:00'; return; }
   const left = Math.round((state.start + DURATION_MIN * 60000 - Date.now()) / 1000);
   const el = $('#timer');
   if (left >= 0) {
@@ -738,8 +790,39 @@ $('#pdfBtn').addEventListener('click', exportPdf);
 $('#pdfBtnTop').addEventListener('click', exportPdf);
 
 /* ---------- init ---------- */
+function validateStudent() {
+  const fields = [['fFirst', 'first'], ['fLast', 'last'], ['fGroup', 'group']];
+  const missing = fields.filter(([, k]) => !(state.meta[k] || '').trim());
+  fields.forEach(([id]) => $('#' + id).classList.remove('invalid'));
+  if (!missing.length) { $('#studentError').textContent = ''; return true; }
+  missing.forEach(([id]) => $('#' + id).classList.add('invalid'));
+  $('#studentError').textContent = 'შეავსე სახელი, გვარი და ჯგუფი.';
+  $('#' + missing[0][0]).focus();
+  return false;
+}
+const setMode = () => document.body.classList.toggle('intro', !state.started);
+$('#introStats').innerHTML = '<span>⏱ 120 წუთი</span><span>100 ქულა</span><span>4 ნაწილი</span><span>ტესტი + კოდის წერა</span>';
+$('#agree').addEventListener('change', () => $('#agreeBox').classList.remove('invalid'));
+$('#startBtn').addEventListener('click', () => {
+  if (!validateStudent()) return;
+  if (!$('#agree').checked) {
+    $('#agreeBox').classList.add('invalid');
+    $('#studentError').textContent = 'დაადასტურე, რომ წესები წაიკითხე.';
+    return;
+  }
+  ['first', 'last', 'group'].forEach(k => state.meta[k] = state.meta[k].trim());
+  state.started = true;
+  state.start = Date.now();
+  save();
+  restore();
+  setMode();
+  window.scrollTo({ top: 0 });
+  tick();
+});
+
 render();
 restore();
+setMode();
 </script>
 </body>
 </html>
