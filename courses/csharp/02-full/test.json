@@ -1,0 +1,16 @@
+{
+  "title": "C# — სრული ტესტი",
+  "topics": [
+    "კლასები",
+    "OOP",
+    "LINQ",
+    "JSON",
+    "Collections",
+    "Exceptions",
+    "Generics",
+    "Lambda"
+  ],
+  "duration": 120,
+  "questions": 50,
+  "points": 100
+}
