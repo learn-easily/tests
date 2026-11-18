@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C# — OOP ტესტი</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1d23; --muted: #5d6573; --faint: #8a919e;
+    --bg: #eceef2; --paper: #fff; --line: #dde1e7;
+    --accent: #3346c4; --accent-soft: #eef0fc;
+    --ok: #15803d; --ok-soft: #ecfdf3; --bad: #b42318; --bad-soft: #fef3f2; --part: #b54708; --part-soft: #fffaeb;
+    --code-bg: #f6f8fa;
+    --sans: "Noto Sans Georgian", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: var(--sans); color: var(--ink); background: var(--bg); line-height: 1.55; -webkit-user-select: none; user-select: none; }
+  input { -webkit-user-select: text; user-select: text; }
+
+  .toolbar { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.94); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+  .toolbar-inner { max-width: 880px; margin: 0 auto; padding: 10px 24px; display: flex; align-items: center; gap: 20px; }
+  .tb-back { font-size: 20px; color: var(--muted); text-decoration: none; padding: 2px 6px; border-radius: 6px; }
+  .tb-back:hover { color: var(--ink); background: var(--bg); }
+  .tb-item { display: flex; flex-direction: column; line-height: 1.2; }
+  .tb-label { font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; }
+  .tb-value { font-family: var(--mono); font-weight: 600; font-size: 17px; }
+  .tb-value.over { color: var(--bad); }
+  .tb-spacer { flex: 1; }
+  .btn { font-family: var(--sans); font-size: 14px; font-weight: 600; border: 0; border-radius: 8px; padding: 10px 18px; cursor: pointer; background: var(--accent); color: #fff; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+  .btn.finish-btn { background: var(--ink); }
+
+  .paper { max-width: 880px; margin: 28px auto 60px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 48px 56px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.04); }
+  .exam-head { border-bottom: 2px solid var(--ink); padding-bottom: 20px; margin-bottom: 8px; }
+  .eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  h1 { font-size: 28px; margin: 6px 0 4px; line-height: 1.25; }
+  .exam-meta { color: var(--muted); font-size: 14px; display: flex; gap: 18px; flex-wrap: wrap; }
+  .student { display: grid; grid-template-columns: 1fr 1fr 160px; gap: 14px; margin: 22px 0 6px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+  .field input { width: 100%; font-family: var(--sans); font-size: 15px; border: 0; border-bottom: 1.5px solid var(--ink); padding: 6px 2px; outline: none; background: transparent; }
+  .field input:focus { border-bottom-color: var(--accent); }
+  .field input.invalid { border-bottom-color: var(--bad); background: var(--bad-soft); }
+  .field input:disabled { color: var(--ink); -webkit-text-fill-color: var(--ink); }
+  .student-error { color: var(--bad); font-size: 13px; min-height: 18px; }
+  .print-meta { display: none; }
+  .rules { background: #f7f8fa; border: 1px solid var(--line); border-radius: 6px; padding: 14px 18px; font-size: 14px; color: #333a45; margin-top: 10px; }
+  .rules ol { margin: 6px 0 0; padding-left: 20px; } .rules li { margin: 2px 0; }
+
+  .section { margin-top: 44px; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid var(--ink); padding-bottom: 6px; margin-bottom: 6px; }
+  .section-head h2 { font-size: 20px; margin: 0; }
+  .section-head h2 .sec-letter { color: var(--accent); margin-right: 6px; }
+  .section-pts { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .section-note { font-size: 14px; color: var(--muted); margin: 6px 0 14px; }
+
+  .q { padding: 20px 0; border-bottom: 1px dashed var(--line); break-inside: avoid; page-break-inside: avoid; }
+  .q:last-child { border-bottom: 0; }
+  .q-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .qid { font-family: var(--mono); font-weight: 600; font-size: 13px; background: var(--ink); color: #fff; border-radius: 4px; padding: 2px 8px; }
+  .qpts { font-size: 12px; color: var(--faint); }
+  .ord { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 5px; counter-reset: o; }
+  .ord li { display: flex; align-items: center; gap: 10px; border: 1.5px solid var(--line); border-radius: 8px; padding: 4px 6px 4px 10px; background: var(--code-bg); }
+  .ord li::before { counter-increment: o; content: counter(o); font: 600 12px var(--mono); color: var(--muted); width: 18px; text-align: right; flex: none; }
+  .ord li pre { margin: 0; flex: 1; font: 14px/1.5 var(--mono); white-space: pre; overflow-x: auto; }
+  .ord li .mv { display: flex; gap: 4px; flex: none; }
+  .ord li .mv button { width: 30px; height: 28px; border: 1px solid var(--line); border-radius: 6px; background: #fff; cursor: pointer; font-size: 13px; color: var(--ink); }
+  .ord li .mv button:hover { border-color: var(--accent); color: var(--accent); }
+  .ord li .mv button:disabled { opacity: .3; cursor: default; }
+  .ord li.moved { border-color: var(--accent); }
+  .ord-hint { font-size: 12.5px; color: var(--muted); margin: 0 0 6px; }
+  pre.code select.blank { font: 600 13.5px var(--mono); border: 1.5px dashed var(--accent); border-radius: 6px; background: var(--accent-soft); color: var(--ink); padding: 1px 4px; margin: 0 2px; }
+  pre.code select.blank.set { border-style: solid; }
+  .rv-ord { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+  .rv-ord > div { min-width: 0; }
+  .rv-ord h4 { margin: 0 0 4px; font-size: 13px; color: var(--muted); }
+  .rv-ord pre.code { margin: 0; }
+  .rv-fill { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+  .rv-fill li { border: 1.5px solid var(--line); border-radius: 8px; padding: 7px 12px; font-size: 14.5px; }
+  .rv-fill li.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .rv-fill li.bad { border-color: var(--bad); background: var(--bad-soft); }
+  @media print { .ord li .mv { display: none; } }
+  .badge { font-size: 11.5px; font-weight: 600; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 2px 10px; }
+  .qtext { margin: 0 0 10px; font-size: 15.5px; }
+  code.inline { font-family: var(--mono); font-size: .88em; background: var(--code-bg); border: 1px solid #e6e9ee; border-radius: 4px; padding: 1px 5px; }
+
+  pre.code { margin: 6px 0 14px; background: var(--code-bg); border: 1px solid #e3e7ec; border-radius: 6px; padding: 12px 0; overflow-x: auto;
+    font-family: var(--mono); font-size: 13.5px; line-height: 1.6; counter-reset: ln; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  pre.code .line { display: block; padding: 0 16px 0 0; white-space: pre; }
+  pre.code .line::before { counter-increment: ln; content: counter(ln); display: inline-block; width: 36px; margin-right: 14px; text-align: right;
+    color: #b3b9c3; border-right: 1px solid #e3e7ec; padding-right: 8px; }
+  .k { color: #0033b3; font-weight: 600; } .s { color: #067d17; } .n { color: #1750eb; } .c { color: #8c8c8c; font-style: italic; } .t { color: #00627a; } .a { color: #9e880d; }
+
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .opt { display: flex; align-items: flex-start; gap: 10px; border: 1.5px solid var(--line); border-radius: 8px; padding: 9px 12px; cursor: pointer;
+    transition: border-color .12s, background .12s; font-size: 14.5px; }
+  .opt:hover { border-color: #b8bfca; }
+  .opt input { position: absolute; opacity: 0; pointer-events: none; }
+  .letter { flex: none; width: 24px; height: 24px; border: 1.5px solid #b8bfca; display: grid; place-items: center; font-weight: 600; font-size: 13px; color: var(--muted); }
+  .opt.radio .letter { border-radius: 50%; } .opt.check .letter { border-radius: 5px; }
+  .opt.checked { border-color: var(--accent); background: var(--accent-soft); }
+  .opt.checked .letter { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .otext { padding-top: 1px; }
+
+  .finish { margin-top: 48px; padding-top: 24px; border-top: 2px solid var(--ink); display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .finish p { margin: 0; color: var(--muted); font-size: 14px; max-width: 520px; }
+
+  /* ---------- results ---------- */
+  #results { display: none; }
+  body.done #results { display: block; }
+  body.done #exam, body.done .finish, body.done .rules { display: none; }
+  .score-card { margin-top: 28px; display: grid; grid-template-columns: 220px 1fr; gap: 28px; align-items: center;
+    border: 1.5px solid var(--ink); border-radius: 10px; padding: 24px 28px; }
+  .score-big { font-family: var(--mono); font-weight: 700; font-size: 52px; line-height: 1; }
+  .score-big small { font-size: 20px; color: var(--muted); font-weight: 600; }
+  .score-sub { color: var(--muted); font-size: 14px; margin-top: 8px; }
+  .breakdown { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .breakdown td { padding: 6px 4px; border-bottom: 1px solid var(--line); }
+  .breakdown td:last-child { text-align: right; white-space: nowrap; font-family: var(--mono); font-weight: 600; }
+  .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; min-width: 80px; }
+  .bar i { display: block; height: 100%; background: var(--accent); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .res-actions { display: flex; gap: 10px; margin-top: 18px; }
+
+  .rv { padding: 18px 0; border-bottom: 1px dashed var(--line); break-inside: avoid; page-break-inside: avoid; }
+  .rv-status { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 2px 10px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rv-status.wrong { color: var(--bad); background: var(--bad-soft); }
+  .rv-status.partial { color: var(--part); background: var(--part-soft); }
+  .rv-status.empty { color: var(--muted); background: #f2f4f7; }
+  .rv-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+  .rv-list li { display: flex; gap: 10px; align-items: flex-start; border: 1.5px solid var(--line); border-radius: 8px; padding: 7px 12px; font-size: 14.5px;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rv-list li .mk { flex: none; width: 20px; font-weight: 700; text-align: center; }
+  .rv-list li.correct { border-color: var(--ok); background: var(--ok-soft); }
+  .rv-list li.correct .mk { color: var(--ok); }
+  .rv-list li.picked-wrong { border-color: var(--bad); background: var(--bad-soft); }
+  .rv-list li.picked-wrong .mk { color: var(--bad); }
+  .rv-list li .you { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; font-weight: 600; }
+  .why { margin-top: 10px; background: #f7f8fa; border-left: 3px solid var(--accent); padding: 10px 14px; font-size: 14.5px; border-radius: 0 6px 6px 0;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .why b { color: var(--accent); }
+  .ok-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .ok-chips span { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--ok); background: var(--ok-soft); border: 1px solid #abefc6; border-radius: 6px; padding: 2px 8px;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  .modal { position: fixed; inset: 0; background: rgba(16,24,40,.45); display: none; place-items: center; z-index: 60; padding: 20px; }
+  .modal.on { display: grid; }
+  .modal-box { background: #fff; border-radius: 12px; padding: 26px 28px; max-width: 440px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,.2); }
+  .modal-box h3 { margin: 0 0 8px; font-size: 19px; }
+  .modal-box p { margin: 0 0 18px; color: var(--muted); font-size: 14.5px; }
+  .modal-box .row { display: flex; gap: 10px; justify-content: flex-end; }
+
+  .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px); background: var(--ink); color: #fff; font-size: 14px; padding: 10px 18px;
+    border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 70; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ---------- intro ---------- */
+  #intro { display: none; min-height: 100vh; padding: 48px 20px 80px; }
+  body.intro #intro { display: block; }
+  body.intro .toolbar, body.intro .paper { display: none; }
+  .intro-card { max-width: 760px; margin: 0 auto; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 44px 52px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.05); }
+  .intro-back { display: inline-block; font-size: 14px; color: var(--muted); text-decoration: none; margin-bottom: 18px; }
+  .intro-back:hover { color: var(--ink); }
+  .intro-stats { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0 6px; }
+  .intro-stats span { font-size: 14px; background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 5px 14px; font-weight: 600; }
+  .intro-card h2 { font-size: 17px; margin: 30px 0 4px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  .intro-rules { margin: 12px 0 0; padding-left: 22px; font-size: 15px; color: #2b3039; }
+  .intro-rules li { margin: 7px 0; padding-left: 4px; }
+  .agree { display: flex; gap: 10px; align-items: flex-start; margin-top: 24px; font-size: 15px; cursor: pointer; padding: 12px 14px;
+    border: 1.5px solid var(--line); border-radius: 8px; }
+  .agree input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent); flex: none; }
+  .agree.invalid { border-color: var(--bad); background: var(--bad-soft); }
+  .start-row { display: flex; align-items: center; gap: 16px; margin-top: 22px; flex-wrap: wrap; }
+  .start-row .btn { font-size: 16px; padding: 13px 28px; }
+  .start-row small { color: var(--muted); font-size: 13.5px; }
+  .student-line { margin-top: 16px; font-size: 15px; display: flex; gap: 22px; flex-wrap: wrap; }
+  .student-line span { color: var(--muted); }
+  .student-line b { color: var(--ink); }
+
+  @media (max-width: 720px) {
+    .paper { padding: 28px 20px; margin: 0; border-radius: 0; }
+    .student, .opts, .score-card { grid-template-columns: 1fr; }
+    .intro-card { padding: 28px 20px; }
+  }
+
+  @page { size: A4; margin: 14mm 14mm 16mm; }
+  @media print {
+    body { background: #fff; }
+    #intro, .toolbar, .rules, .finish, .toast, .student-error, .modal, .res-actions { display: none !important; }
+    .paper { margin: 0; padding: 0; border: 0; box-shadow: none; max-width: none; }
+    .print-meta { display: flex; gap: 22px; flex-wrap: wrap; font-size: 12px; color: #333; margin-top: 10px; }
+    .section { margin-top: 26px; } .section-head { break-after: avoid; }
+    .q, .rv { padding: 12px 0; }
+    .field input { border-bottom: 1px solid #000; }
+  }
+</style>
+</head>
+<body>
+
+<section id="intro">
+  <div class="intro-card">
+    <a class="intro-back" href="../../">← ყველა ტესტი</a>
+    <div class="eyebrow">შემაჯამებელი გამოცდა</div>
+    <h1>C# — OOP ტესტი</h1>
+    <div class="exam-meta"><span>C#-ის საფუძვლები · კლასები და ობიექტები · ინკაფსულაცია · მემკვიდრეობა · პოლიმორფიზმი · აბსტრაქცია · ინტერფეისი</span></div>
+    <div class="intro-stats" id="introStats"></div>
+
+    <h2>შენი მონაცემები</h2>
+    <div class="student">
+      <div class="field"><label for="fFirst">სახელი</label><input id="fFirst" autocomplete="off"></div>
+      <div class="field"><label for="fLast">გვარი</label><input id="fLast" autocomplete="off"></div>
+      <div class="field"><label for="fGroup">ჯგუფი</label><input id="fGroup" autocomplete="off"></div>
+    </div>
+
+    <h2>წესები და პირობები</h2>
+    <ol class="intro-rules" id="introRules"></ol>
+
+    <label class="agree" id="agreeBox"><input type="checkbox" id="agree"><span>წესები წავიკითხე და ვეთანხმები</span></label>
+    <div class="student-error" id="studentError"></div>
+    <div class="start-row">
+      <button class="btn" id="startBtn" type="button">ტესტის დაწყება</button>
+      <small>დაჭერისთანავე ჩაირთვება ტაიმერი.</small>
+    </div>
+  </div>
+</section>
+
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <a class="tb-back" href="../../" title="ყველა ტესტი">←</a>
+    <div class="tb-item"><span class="tb-label" id="timerLabel">დარჩენილი დრო</span><span class="tb-value" id="timer">--:--</span></div>
+    <div class="tb-item"><span class="tb-label" id="progLabel">პასუხი</span><span class="tb-value" id="progress">0 / 0</span></div>
+    <div class="tb-spacer"></div>
+    <button class="btn finish-btn" id="finishTop" type="button">დასრულება</button>
+  </div>
+</div>
+
+<main class="paper">
+  <header class="exam-head">
+    <div class="eyebrow">შემაჯამებელი გამოცდა</div>
+    <h1>C# — OOP ტესტი</h1>
+    <div class="exam-meta"><span>C#-ის საფუძვლები · კლასები და ობიექტები · ინკაფსულაცია · მემკვიდრეობა · პოლიმორფიზმი · აბსტრაქცია · ინტერფეისი</span></div>
+    <div class="exam-meta" style="margin-top:4px">
+      <span>⏱ 75 წუთი</span><span><b id="qCount"></b> კითხვა</span><span>მაქსიმუმი: <b id="maxPts"></b> ქულა</span>
+    </div>
+    <div class="student-line"><span>სტუდენტი: <b id="stName"></b></span><span>ჯგუფი: <b id="stGroup"></b></span></div>
+    <div class="print-meta" id="printMeta"></div>
+  </header>
+
+  <section id="results"></section>
+  <div id="exam"></div>
+
+  <div class="finish">
+    <p>დარწმუნდი, რომ სახელი, გვარი და ჯგუფი შევსებულია და ყველა კითხვას უპასუხე. დასრულების შემდეგ პასუხებს ვეღარ შეცვლი.</p>
+    <button class="btn finish-btn" id="finishBtn" type="button">დასრულება</button>
+  </div>
+</main>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3>დავასრულოთ ტესტი?</h3>
+    <p id="modalText"></p>
+    <div class="row">
+      <button class="btn ghost" id="modalNo" type="button">დაბრუნება</button>
+      <button class="btn finish-btn" id="modalYes" type="button">დასრულება</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const EXAM = [{"id": "A", "title": "C#-ის საფუძვლები", "note": "ცვლადები, პირობები, ციკლები, მასივები, მეთოდები. კოდი Main-ის შიგნით წერია, კლასები — `namespace Arena`-ში. ყველა კოდი კომპილირდება, თუ კითხვა სხვას არ ამბობს.", "items": [{"id": "A1", "type": "mc", "text": "რას დაბეჭდავს?", "code": "int[] scores = { 7, 10, 4, 9 };\nint sum = 0;\n\nforeach (int s in scores)\n{\n    if (s >= 7) sum += s;\n}\n\nConsole.WriteLine(sum);", "lang": "csharp", "options": ["`26`", "`30`", "`20`", "`4`"]}, {"id": "A2", "type": "mc", "text": "რას დაბეჭდავს?", "code": "static int Twice(int n)\n{\n    n = n * 2;\n    return n;\n}\n\nstatic void Main(string[] args)\n{\n    int x = 5;\n    int y = Twice(x);\n    Console.WriteLine($\"{x} {y}\");\n}", "lang": "csharp", "options": ["`5 10`", "`10 10`", "`5 5`", "`10 5`"]}, {"id": "A3", "type": "order", "text": "დაალაგე ხაზები სწორი თანმიმდევრობით: მეთოდი, რომელიც მასივში **ყველაზე დიდ** რიცხვს აბრუნებს.", "lines": ["    {", "    int max = numbers[0];", "}", "{", "    return max;", "    }", "static int Max(int[] numbers)", "        if (n > max) max = n;", "    foreach (int n in numbers)"]}, {"id": "A4", "type": "mc", "text": "რამდენჯერ დაიბეჭდება ⚔️?", "code": "int round = 1;\n\nwhile (round <= 10)\n{\n    Console.WriteLine(\"⚔️\");\n    round += 3;\n}", "lang": "csharp", "options": ["4", "3", "10", "უსასრულოდ"]}]}, {"id": "B", "title": "კლასები და ობიექტები", "note": "კოდი Main-ის შიგნით წერია, კლასები — `namespace Arena`-ში. ყველა კოდი კომპილირდება, თუ კითხვა სხვას არ ამბობს.", "items": [{"id": "B1", "type": "mc", "text": "რა მოხდება ბოლო ხაზზე?", "code": "class Hero\n{\n    public string Name { get; set; }\n    public int Health { get; set; }\n\n    public Hero(string name, int health)\n    {\n        Name = name;\n        Health = health;\n    }\n}\n\n// Main\nHero h = new Hero(\"რაინდი\");", "lang": "csharp", "options": ["კომპილაციის შეცდომა: ერთპარამეტრიანი კონსტრუქტორი არ არსებობს", "ობიექტი შეიქმნება, `Health` იქნება 0", "ობიექტი შეიქმნება, `Health` იქნება 100", "გაშვებისას შეცდომა"]}, {"id": "B2", "type": "mc", "text": "რას დაბეჭდავს? (`Hero` — წინა კითხვის კლასი)", "code": "Hero a = new Hero(\"რაინდი\", 100);\nHero b = a;\nb.Health = 40;\n\nHero c = new Hero(\"რაინდი\", 100);\n\nConsole.WriteLine($\"{a.Health} {c.Health}\");", "lang": "csharp", "options": ["`40 100`", "`100 100`", "`40 40`", "`100 40`"]}, {"id": "B3", "type": "multi", "text": "კლასს ორი კონსტრუქტორი აქვს. რომელი ჩანაწერი შექმნის მოსწავლეს, რომლის სახელია „ანა“ და ასაკი — 15?", "code": "class Student\n{\n    public string Name { get; set; } = \"\";\n    public int Age { get; set; }\n\n    public Student() { }\n\n    public Student(string name, int age)\n    {\n        Name = name;\n        Age = age;\n    }\n}", "lang": "csharp", "options": ["`Student s = new Student(\"ანა\", 15);`", "`Student s = new Student { Name = \"ანა\", Age = 15 };`", "`Student s = new Student();` და მერე `s.Name = \"ანა\";` `s.Age = 15;`", "`Student s = new Student(15, \"ანა\");`"], "multi": true}, {"id": "B4", "type": "fill", "text": "შეავსე გამოტოვებული ადგილები: ორი მოსწავლე მასივში და ყველა წარდგება.", "code": "⟦a⟧ students =\n{\n    new Student(\"ნიკა\", 16),\n    new Student(\"ანა\", 15)\n};\n\nforeach (⟦b⟧ s in students)\n{\n    s.⟦c⟧();\n}", "lang": "csharp", "blanks": [["`Student`", "`Student[]`", "`string[]`", "`int[]`"], ["`Student[]`", "`int`", "`Student`", "`students`"], ["`Student`", "`Name`", "`new`", "`Introduce`"]]}]}, {"id": "C", "title": "ინკაფსულაცია", "note": "კოდი Main-ის შიგნით წერია, კლასები — `namespace Arena`-ში. ყველა კოდი კომპილირდება, თუ კითხვა სხვას არ ამბობს.", "items": [{"id": "C1", "type": "mc", "text": "რომელ ხაზზეა კომპილაციის შეცდომა?", "code": "class Chest\n{\n    private int gold = 100;\n    public int Potions { get; private set; } = 3;\n\n    public void AddGold(int amount)\n    {\n        if (amount > 0) gold += amount;    // ხაზი 1\n    }\n}\n\n// Main\nChest chest = new Chest();\nchest.AddGold(50);                        // ხაზი 2\nConsole.WriteLine(chest.Potions);         // ხაზი 3\nchest.Potions = 10;                       // ხაზი 4", "lang": "csharp", "options": ["მხოლოდ ხაზი 4", "ხაზი 1 და ხაზი 4", "მხოლოდ ხაზი 3", "შეცდომა არ არის"]}, {"id": "C2", "type": "mc", "text": "რას დაბეჭდავს?", "code": "class Hero\n{\n    private string name = \"\";\n\n    public string Name\n    {\n        get { return name; }\n        set\n        {\n            if (value == \"\") name = \"უცნობი\";\n            else name = value;\n        }\n    }\n}\n\n// Main\nHero h = new Hero();\nh.Name = \"ლუკა\";\nh.Name = \"\";\nConsole.WriteLine(h.Name);", "lang": "csharp", "options": ["`უცნობი`", "`ლუკა`", "ცარიელ ხაზს", "კომპილაციის შეცდომა: `name` private-ია"]}, {"id": "C3", "type": "mc", "text": "რას დაბეჭდავს?", "code": "class Hero\n{\n    public int Health { get; private set; } = 100;\n    public int MaxHealth { get; private set; } = 100;\n\n    public void TakeDamage(int damage)\n    {\n        if (damage < 0) return;\n        Health -= damage;\n        if (Health < 0) Health = 0;\n    }\n\n    public void Heal(int amount)\n    {\n        Health += amount;\n        if (Health > MaxHealth) Health = MaxHealth;\n    }\n}\n\n// Main\nHero h = new Hero();\nh.TakeDamage(30);\nh.TakeDamage(-50);\nh.Heal(50);\nh.TakeDamage(120);\nConsole.WriteLine(h.Health);", "lang": "csharp", "options": ["`0`", "`-20`", "`50`", "`30`"]}, {"id": "C4", "type": "multi", "text": "რომელი დებულებაა სწორი?", "options": ["`private` წევრი მხოლოდ საკუთარი კლასის შიგნით ჩანს", "`{ get; private set; }` — გარედან წაკითხვა შეიძლება, შეცვლა — არა", "თუ access modifier არ წერია, კლასის წევრი `public`-ია", "property-ის `set`-ში `value` არის მნიშვნელობა, რომელსაც წერენ"], "multi": true}]}, {"id": "D", "title": "მემკვიდრეობა", "note": "კოდი Main-ის შიგნით წერია, კლასები — `namespace Arena`-ში. ყველა კოდი კომპილირდება, თუ კითხვა სხვას არ ამბობს.", "items": [{"id": "D1", "type": "mc", "text": "რას დაბეჭდავს?", "code": "class Character\n{\n    public Character()\n    {\n        Console.Write(\"C\");\n    }\n}\n\nclass Warrior : Character\n{\n    public Warrior()\n    {\n        Console.Write(\"W\");\n    }\n}\n\n// Main\nWarrior w = new Warrior();", "lang": "csharp", "options": ["`CW`", "`W`", "`WC`", "`C`"]}, {"id": "D2", "type": "mc", "text": "რატომ არ კომპილირდება?", "code": "class Character\n{\n    public string Name { get; private set; }\n\n    public Character(string name)\n    {\n        Name = name;\n    }\n}\n\nclass Mage : Character\n{\n    public int Mana { get; private set; }\n\n    public Mage(string name)\n    {\n        Mana = 60;\n    }\n}", "lang": "csharp", "options": ["`Mage`-ის კონსტრუქტორს `: base(name)` აკლია — `Character`-ს ცარიელი კონსტრუქტორი არ აქვს", "`Mage`-ს `Name` არ აქვს", "შვილ კლასს საკუთარი კონსტრუქტორი ვერ ექნება", "`Mana` უნდა იყოს `protected`"]}, {"id": "D3", "type": "fill", "text": "`Character`-ს აქვს კონსტრუქტორი `Character(string name, int maxHealth)` და `protected int RollDamage(int min, int max)`. შეავსე:", "code": "class Warrior ⟦a⟧ Character\n{\n    public Warrior(string name) ⟦b⟧(name, 120)\n    {\n    }\n\n    public int Smash()\n    {\n        return ⟦c⟧(15, 25);\n    }\n}", "lang": "csharp", "blanks": [["`extends`", "`:`", "`.`", "`=>`"], ["`: Character`", "`base.`", "`: base`", "`: new`"], ["`base.Smash`", "`Character.RollDamage`", "`Random`", "`RollDamage`"]]}, {"id": "D4", "type": "mc", "text": "რომელ ხაზზეა კომპილაციის შეცდომა?", "code": "class Character\n{\n    protected int RollDamage(int min, int max)\n    {\n        return Random.Shared.Next(min, max + 1);\n    }\n}\n\nclass Archer : Character\n{\n    public int Shoot()\n    {\n        return RollDamage(10, 18);           // ხაზი 1\n    }\n}\n\n// Main\nArcher a = new Archer();\nConsole.WriteLine(a.Shoot());               // ხაზი 2\nConsole.WriteLine(a.RollDamage(1, 5));      // ხაზი 3", "lang": "csharp", "options": ["მხოლოდ ხაზი 3", "მხოლოდ ხაზი 1", "ხაზი 1 და ხაზი 3", "შეცდომა არ არის"]}]}, {"id": "E", "title": "პოლიმორფიზმი", "note": "კოდი Main-ის შიგნით წერია, კლასები — `namespace Arena`-ში. ყველა კოდი კომპილირდება, თუ კითხვა სხვას არ ამბობს.", "items": [{"id": "E1", "type": "mc", "text": "რას დაბეჭდავს?", "code": "class Character\n{\n    public virtual string Attack()\n    {\n        return \"დარტყმა\";\n    }\n}\n\nclass Mage : Character\n{\n    public override string Attack()\n    {\n        return \"ცეცხლი\";\n    }\n}\n\nclass Archer : Character\n{\n}\n\n// Main\nCharacter[] party = { new Mage(), new Archer() };\n\nforeach (Character c in party)\n{\n    Console.Write(c.Attack() + \" \");\n}", "lang": "csharp", "options": ["`ცეცხლი დარტყმა`", "`დარტყმა დარტყმა`", "`ცეცხლი ცეცხლი`", "კომპილაციის შეცდომა: `Archer`-ს `Attack()` არ აქვს"]}, {"id": "E2", "type": "mc", "text": "რას დაბეჭდავს? (კომპილატორი მხოლოდ გაფრთხილებას აჩვენებს)", "code": "class Character\n{\n    public virtual int Attack()\n    {\n        return 5;\n    }\n}\n\nclass Warrior : Character\n{\n    public int Attack()\n    {\n        return 20;\n    }\n}\n\n// Main\nCharacter c = new Warrior();\nWarrior w = new Warrior();\nConsole.WriteLine($\"{c.Attack()} {w.Attack()}\");", "lang": "csharp", "options": ["`5 20`", "`20 20`", "`5 5`", "კომპილაციის შეცდომა"]}, {"id": "E3", "type": "mc", "text": "რას დაბეჭდავს?", "code": "class Character\n{\n    public virtual string Describe()\n    {\n        return \"პერსონაჟი\";\n    }\n}\n\nclass Mage : Character\n{\n    public override string Describe()\n    {\n        return base.Describe() + \" · ჯადოქარი\";\n    }\n}\n\n// Main\nCharacter c = new Mage();\nConsole.WriteLine(c.Describe());", "lang": "csharp", "options": ["`პერსონაჟი · ჯადოქარი`", "`პერსონაჟი`", "` · ჯადოქარი`", "უსასრულო გამოძახება"]}, {"id": "E4", "type": "mc", "text": "რას დაბეჭდავს? (ორივე კლასი `namespace Arena`-შია)", "code": "class Dragon\n{\n    public int Health { get; private set; } = 400;\n}\n\nclass Orc\n{\n    public int Health { get; private set; } = 80;\n\n    public override string ToString()\n    {\n        return $\"ორკი ❤️ {Health}\";\n    }\n}\n\n// Main\nConsole.WriteLine(new Orc());\nConsole.WriteLine(new Dragon());", "lang": "csharp", "options": ["`ორკი ❤️ 80` და `Arena.Dragon`", "`ორკი ❤️ 80` და `დრაკონი ❤️ 400`", "`ორკი ❤️ 80` და ცარიელი ხაზი", "`Arena.Orc` და `Arena.Dragon`"]}, {"id": "E5", "type": "order", "text": "დაალაგე: მეომრის `TakeDamage` — ჯავშანი დაზიანებას ამცირებს, მერე მშობლის წესი მუშაობს.", "lines": ["    base.TakeDamage(reduced);", "    int reduced = damage - Armor;", "public override void TakeDamage(int damage)", "{", "}", "    if (reduced < 0) reduced = 0;"]}]}, {"id": "F", "title": "აბსტრაქცია და ინტერფეისი", "note": "კოდი Main-ის შიგნით წერია, კლასები — `namespace Arena`-ში. ყველა კოდი კომპილირდება, თუ კითხვა სხვას არ ამბობს.", "items": [{"id": "F1", "type": "multi", "text": "რომელი დებულებაა სწორი?", "code": "abstract class Character\n{\n    public string Name { get; private set; }\n\n    public Character(string name)\n    {\n        Name = name;\n    }\n\n    public abstract int Attack();\n}", "lang": "csharp", "options": ["`new Character(\"x\")` — კომპილაციის შეცდომაა", "`Character c = new Warrior(\"ლუკა\");` კომპილირდება (Warrior — Character-ის შვილია)", "`abstract` მეთოდს ტანი (`{ … }`) აუცილებლად უნდა ჰქონდეს", "Character-ის ყველა ჩვეულებრივი შვილი ვალდებულია `override int Attack()` დაწეროს"], "multi": true}, {"id": "F2", "type": "mc", "text": "რა არის პრობლემა?", "code": "interface IHealer\n{\n    void HealAlly(Character ally);\n}\n\nclass Priest : Character, IHealer\n{\n    public Priest(string name) : base(name)\n    {\n    }\n\n    public override int Attack()\n    {\n        return 5;\n    }\n}", "lang": "csharp", "options": ["კომპილაციის შეცდომა: `Priest`-ს `HealAlly` აკლია", "კომპილაციის შეცდომა: კლასს ორი მშობელი ვერ ეყოლება", "კომპილაციის შეცდომა: ინტერფეისის მეთოდს ტანი უნდა ჰქონდეს", "პრობლემა არ არის"]}, {"id": "F3", "type": "mc", "text": "დრაკონს და გობლინს მოკვლის შემდეგ ოქრო ჩამოუვარდებათ, ჯადოქარს და მეომარს — არა. ოთხივე `Character`-ის შვილია. სად დავწეროთ `DropGold()`?", "options": ["ინტერფეისში `ILootable` — დრაკონი და გობლინი მას ახორციელებენ", "`Character`-ში — ყველას ექნება", "ცალკე კლასში `Lootable : Character`, და `class Dragon : Character, Lootable`", "`static` მეთოდად Program-ში"]}, {"id": "F4", "type": "fill", "text": "`Character` — abstract კლასია `abstract int Attack()`-ით. შეავსე:", "code": "⟦a⟧ ILootable\n{\n    int DropGold();\n}\n\nclass Goblin : Character⟦b⟧ ILootable\n{\n    public Goblin() : base(\"გობლინი\")\n    {\n    }\n\n    public ⟦c⟧ int Attack()\n    {\n        return 4;\n    }\n\n    public int DropGold()\n    {\n        return 10;\n    }\n}", "lang": "csharp", "blanks": [["`class`", "`abstract class`", "`interface`", "`virtual`"], ["`:`", "`,`", "`+`", "` implements`"], ["`virtual`", "`abstract`", "`new`", "`override`"]]}]}];
+const POINTS = 4.0;
+const DURATION_MIN = 75;
+const K = "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";
+const S = "le-oop-7c1e94a2";
+const LETTERS = ['ა', 'ბ', 'გ', 'დ'];
+const STORE_KEY = 'exam:' + location.pathname;
+
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const inline = s => esc(s).replace(/`([^`]+)`/g, '<code class="inline">$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+const pad = n => String(n).padStart(2, '0');
+const fmtPts = n => (Math.round(n * 100) / 100).toString();
+const QUESTIONS = EXAM.flatMap(s => s.items.map(q => ({ ...q, sec: s.id })));
+const MAX = QUESTIONS.length * POINTS;
+
+/* ---------- highlight ---------- */
+const KW = {
+  text: /(?!)/g,
+  csharp: /(\/\/[^\n]*)|(\$?"""[\s\S]*?"""|\$?"(?:[^"\\\n]|\\.)*")|(\b\d+(?:\.\d+)?\b)|\b(int|double|decimal|string|bool|object|void|static|return|if|else|for|foreach|in|while|new|true|false|var|public|private|protected|readonly|class|record|struct|interface|abstract|virtual|override|sealed|base|this|null|is|as|get|set|using|try|catch|finally|throw|switch|out|with|nameof)\b|\b(Console|Random|Hero|Student|Chest|Character|Warrior|Mage|Archer|Dragon|Orc|Priest|Goblin|IHealer|ILootable)\b|(\[[A-Za-z]+(?:\("[^"]*"\))?\])/g,
+  sql: /(--[^\n]*)|('(?:[^'\\\n]|\\.)*')|(\b\d+\b)|\b(SELECT|FROM|WHERE|INNER|LEFT|JOIN|ON|GROUP|BY|ORDER|AS|UPDATE|SET|DELETE|INSERT|INTO|VALUES|COUNT|NULL|AND|OR)\b()()/gi,
+};
+function highlight(src, lang) {
+  const re = new RegExp(KW[lang] || KW.csharp);
+  let out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    if (!m[0]) { re.lastIndex++; continue; }
+    out += esc(src.slice(last, m.index));
+    const cls = m[1] ? 'c' : m[2] ? 's' : m[3] ? 'n' : m[4] ? 'k' : m[5] ? 't' : 'a';
+    out += `<span class="${cls}">${esc(m[0])}</span>`;
+    last = re.lastIndex;
+  }
+  out += esc(src.slice(last));
+  return out.split('\n').map(l => `<span class="line">${l || ' '}</span>`).join('');
+}
+const codeBlock = (src, lang) => `<pre class="code">${highlight(src, lang)}</pre>`;
+
+/* ---------- state ---------- */
+let state = { meta: { first: '', last: '', group: '' }, answers: {}, order: {}, start: null, finished: null };
+try { const saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); if (saved) state = Object.assign(state, saved); } catch (e) {}
+// ძველი ვერსიის შენახული მდგომარეობა: თუ უკვე პასუხობდა, ტესტი დაწყებულად ითვლება
+if (!state.started) {
+  if (state.finished || Object.keys(state.answers || {}).length) state.started = true;
+  else state.start = null;
+}
+const optCount = q => q.type === 'order' ? q.lines.length : q.type === 'fill' ? 0 : q.options.length;
+for (const q of QUESTIONS) {
+  const n = optCount(q);
+  if (!n) continue;
+  if (!Array.isArray(state.order[q.id]) || state.order[q.id].length !== n) {
+    const p = Array.from({ length: n }, (_, i) => i);
+    for (let i = p.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; }
+    state.order[q.id] = p;
+  }
+}
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
+save();
+
+/* ---------- render exam ---------- */
+function renderExam() {
+  $('#qCount').textContent = QUESTIONS.length;
+  $('#maxPts').textContent = fmtPts(MAX);
+  $('#exam').innerHTML = EXAM.map(sec => `
+    <section class="section">
+      <div class="section-head"><h2><span class="sec-letter">${sec.id}</span>${esc(sec.title)}</h2>
+        <span class="section-pts">${fmtPts(sec.items.length * POINTS)} ქულა</span></div>
+      <p class="section-note">${inline(sec.note)}</p>
+      ${sec.shared ? codeBlock(sec.shared, 'csharp') : ''}
+      ${sec.items.map(q => {
+        if (q.type === 'order' || q.type === 'fill') return renderSpecial(q);
+        const type = q.multi ? 'checkbox' : 'radio';
+        return `<article class="q" id="q-${q.id}">
+          <div class="q-head"><span class="qid">${q.id}</span><span class="qpts">${fmtPts(POINTS)} ქულა</span>
+            ${q.multi ? '<span class="badge">შესაძლოა რამდენიმე სწორი პასუხი</span>' : ''}</div>
+          ${q.text ? `<p class="qtext">${inline(q.text)}</p>` : ''}
+          ${q.code ? codeBlock(q.code, q.lang) : ''}
+          <div class="opts">${state.order[q.id].map((orig, pos) => `
+            <label class="opt ${q.multi ? 'check' : 'radio'}">
+              <input type="${type}" name="${q.id}" value="${orig}">
+              <span class="letter">${LETTERS[pos]}</span><span class="otext">${inline(q.options[orig])}</span>
+            </label>`).join('')}</div>
+        </article>`;
+      }).join('')}
+    </section>`).join('');
+}
+
+const BLANK = ['a', 'b', 'c', 'd', 'e'];
+const plain = s => String(s).replace(/`/g, '');
+function orderList(q) {
+  const arr = state.answers[q.id] || state.order[q.id];
+  const moved = !!state.answers[q.id];
+  return arr.map((i, pos) => `<li class="${moved ? 'moved' : ''}"><pre>${highlight(q.lines[i], 'csharp').replace(/<span class="line">|<\/span>$/g, '')}</pre>
+    <span class="mv"><button type="button" data-q="${q.id}" data-pos="${pos}" data-dir="-1" ${pos === 0 ? 'disabled' : ''}>▲</button>
+    <button type="button" data-q="${q.id}" data-pos="${pos}" data-dir="1" ${pos === arr.length - 1 ? 'disabled' : ''}>▼</button></span></li>`).join('');
+}
+function fillCode(q) {
+  const picked = state.answers[q.id] || [];
+  let html = highlight(q.code, q.lang || 'csharp');
+  q.blanks.forEach((opts, b) => {
+    const v = picked[b] ?? -1;
+    const sel = `<select class="blank ${v >= 0 ? 'set' : ''}" data-q="${q.id}" data-b="${b}"><option value="-1">${BLANK[b]} …</option>` +
+      opts.map((o, i) => `<option value="${i}" ${v === i ? 'selected' : ''}>${esc(plain(o))}</option>`).join('') + '</select>';
+    html = html.replace('⟦' + BLANK[b] + '⟧', sel);
+  });
+  return `<pre class="code">${html}</pre>`;
+}
+function renderSpecial(q) {
+  const badge = q.type === 'order' ? '<span class="badge">დაალაგე ▲ ▼ ღილაკებით</span>' : '<span class="badge">აირჩიე თითოეულ ცარიელ ადგილზე</span>';
+  const body = q.type === 'order'
+    ? `${q.code ? codeBlock(q.code, q.lang) : ''}<ol class="ord" id="ord-${q.id}">${orderList(q)}</ol>`
+    : fillCode(q);
+  return `<article class="q" id="q-${q.id}">
+    <div class="q-head"><span class="qid">${q.id}</span><span class="qpts">${fmtPts(POINTS)} ქულა</span>${badge}</div>
+    ${q.text ? `<p class="qtext">${inline(q.text)}</p>` : ''}
+    ${body}
+  </article>`;
+}
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.ord .mv button');
+  if (!btn || state.finished || !state.started) return;
+  const q = QUESTIONS.find(x => x.id === btn.dataset.q);
+  const arr = (state.answers[q.id] || state.order[q.id]).slice();
+  const pos = +btn.dataset.pos, to = pos + +btn.dataset.dir;
+  if (to < 0 || to >= arr.length) return;
+  [arr[pos], arr[to]] = [arr[to], arr[pos]];
+  state.answers[q.id] = arr;
+  $('#ord-' + q.id).innerHTML = orderList(q);
+  updateProgress(); save();
+});
+document.addEventListener('change', e => {
+  const s = e.target;
+  if (!s.matches || !s.matches('select.blank') || state.finished) return;
+  const q = QUESTIONS.find(x => x.id === s.dataset.q);
+  const arr = state.answers[q.id] || q.blanks.map(() => -1);
+  arr[+s.dataset.b] = +s.value;
+  state.answers[q.id] = arr;
+  s.classList.toggle('set', +s.value >= 0);
+  updateProgress(); save();
+});
+
+function restore() {
+  $('#fFirst').value = state.meta.first || '';
+  $('#fLast').value = state.meta.last || '';
+  $('#fGroup').value = state.meta.group || '';
+  $('#stName').textContent = `${state.meta.first || ''} ${state.meta.last || ''}`.trim();
+  $('#stGroup').textContent = state.meta.group || '';
+  for (const [qid, vals] of Object.entries(state.answers))
+    (Array.isArray(vals) ? vals : []).forEach(v => { const i = document.querySelector(`input[name="${qid}"][value="${v}"]`); if (i) i.checked = true; });
+  syncOptionClasses(); updateProgress();
+}
+function syncOptionClasses() {
+  document.querySelectorAll('.opt').forEach(l => l.classList.toggle('checked', l.querySelector('input').checked));
+}
+const answeredCount = () => QUESTIONS.filter(q => {
+  const a = state.answers[q.id] || [];
+  return q.type === 'fill' ? a.some(v => v >= 0) : a.length;
+}).length;
+function updateProgress() {
+  if (state.finished) return;
+  $('#progress').textContent = `${answeredCount()} / ${QUESTIONS.length}`;
+}
+
+document.addEventListener('change', e => {
+  const inp = e.target;
+  if (state.finished || !inp.matches('.opt input')) return;
+  state.answers[inp.name] = [...document.querySelectorAll(`input[name="${inp.name}"]:checked`)].map(i => +i.value);
+  syncOptionClasses(); updateProgress(); save();
+});
+document.addEventListener('input', e => {
+  const map = { fFirst: 'first', fLast: 'last', fGroup: 'group' };
+  const k = map[e.target.id]; if (!k || state.started) return;
+  state.meta[k] = e.target.value; e.target.classList.remove('invalid'); save();
+});
+
+/* ---------- grading ---------- */
+function decodeKey() {
+  const raw = atob(K), sb = new TextEncoder().encode(S), bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) ^ sb[i % sb.length];
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+function grade() {
+  const key = decodeKey();
+  return QUESTIONS.map(q => {
+    const correct = key[q.id].a, picked = state.answers[q.id] || [];
+    let frac;
+    if (q.type === 'order') {
+      const want = correct.map(i => q.lines[i]), got = picked.map(i => q.lines[i]);
+      if (!picked.length) frac = 0;
+      else if (got.join('\n') === want.join('\n')) frac = 1;
+      else {
+        const pairs = new Set(want.slice(1).map((l, i) => want[i] + '\u0000' + l));
+        let hit = 0;
+        for (let i = 1; i < got.length; i++) if (pairs.has(got[i - 1] + '\u0000' + got[i])) hit++;
+        frac = Math.round(hit / (want.length - 1) * 100) / 100 * 0.8;
+      }
+    } else if (q.type === 'fill') {
+      frac = picked.length ? correct.filter((c, b) => picked[b] === c).length / correct.length : 0;
+    } else if (!q.multi) frac = picked.length === 1 && picked[0] === correct[0] ? 1 : 0;
+    else {
+      const hits = picked.filter(p => correct.includes(p)).length, wrong = picked.length - hits;
+      frac = Math.max(0, (hits - wrong) / correct.length);
+    }
+    const empty = q.type === 'fill' ? !picked.some(v => v >= 0) : !picked.length;
+    const status = empty ? 'empty' : frac === 1 ? 'ok' : frac > 0 ? 'partial' : 'wrong';
+    return { id: q.id, sec: q.sec, picked, correct, why: key[q.id].why, pts: POINTS * frac, status };
+  });
+}
+
+/* ---------- results ---------- */
+function reviewSpecial(q, x) {
+  let body;
+  if (q.type === 'order') {
+    const mine = (x.picked.length ? x.picked : state.order[q.id]).map(i => q.lines[i]).join('\n');
+    const right = x.correct.map(i => q.lines[i]).join('\n');
+    body = `<div class="rv-ord"><div><h4>შენი რიგი</h4>${codeBlock(mine, 'csharp')}</div><div><h4>სწორი რიგი</h4>${codeBlock(right, 'csharp')}</div></div>`;
+  } else {
+    body = codeBlock(q.code.replace(/⟦(\w)⟧/g, '[ $1 ]'), q.lang || 'csharp') + '<ul class="rv-fill">' + q.blanks.map((opts, b) => {
+      const p = x.picked[b] ?? -1, c = x.correct[b];
+      const mine = p >= 0 ? `<code class="inline">${esc(plain(opts[p]))}</code>` : '—';
+      return `<li class="${p === c ? 'ok' : 'bad'}"><b>${BLANK[b]}:</b> შენი პასუხი ${mine} · სწორი <code class="inline">${esc(plain(opts[c]))}</code></li>`;
+    }).join('') + '</ul>';
+  }
+  return `<article class="rv">
+    <div class="q-head"><span class="qid">${q.id}</span><span class="rv-status ${x.status}">${STATUS[x.status]}</span>
+      <span class="qpts">${fmtPts(x.pts)} / ${fmtPts(POINTS)} ქულა</span></div>
+    ${q.text ? `<p class="qtext">${inline(q.text)}</p>` : ''}
+    ${body}
+    <div class="why"><b>რატომ:</b> ${inline(x.why)}</div>
+  </article>`;
+}
+const STATUS = { wrong: 'არასწორი', partial: 'ნაწილობრივ', empty: 'პასუხის გარეშე' };
+function renderResults() {
+  const r = state.finished.results;
+  const total = r.reduce((a, x) => a + x.pts, 0);
+  const pct = Math.round(total / MAX * 100);
+  const okCount = r.filter(x => x.status === 'ok').length;
+  const bySec = EXAM.map(s => {
+    const xs = r.filter(x => x.sec === s.id), got = xs.reduce((a, x) => a + x.pts, 0), max = xs.length * POINTS;
+    return `<tr><td><b>${s.id}</b> · ${esc(s.title)}</td><td style="width:40%"><div class="bar"><i style="width:${Math.round(got / max * 100)}%"></i></div></td>
+      <td>${fmtPts(got)} / ${fmtPts(max)}</td></tr>`;
+  }).join('');
+
+  const bad = r.filter(x => x.status !== 'ok');
+  const qById = Object.fromEntries(QUESTIONS.map(q => [q.id, q]));
+  const review = bad.map(x => {
+    const q = qById[x.id];
+    if (q.type === 'order' || q.type === 'fill') return reviewSpecial(q, x);
+    const items = state.order[q.id].map((orig, pos) => {
+      const isC = x.correct.includes(orig), isP = x.picked.includes(orig);
+      const cls = isC ? 'correct' : isP ? 'picked-wrong' : '';
+      const mk = isC ? '✓' : isP ? '✗' : '';
+      return `<li class="${cls}"><span class="mk">${mk}</span><span><b>${LETTERS[pos]}.</b> ${inline(q.options[orig])}</span>${isP ? '<span class="you">შენი პასუხი</span>' : ''}</li>`;
+    }).join('');
+    return `<article class="rv">
+      <div class="q-head"><span class="qid">${q.id}</span><span class="rv-status ${x.status}">${STATUS[x.status]}</span>
+        <span class="qpts">${fmtPts(x.pts)} / ${fmtPts(POINTS)} ქულა</span></div>
+      ${q.text ? `<p class="qtext">${inline(q.text)}</p>` : ''}
+      ${q.code ? codeBlock(q.code, q.lang) : ''}
+      <ul class="rv-list">${items}</ul>
+      <div class="why"><b>რატომ:</b> ${inline(x.why)}</div>
+    </article>`;
+  }).join('');
+
+  $('#results').innerHTML = `
+    <div class="score-card">
+      <div><div class="score-big">${fmtPts(total)}<small> / ${fmtPts(MAX)}</small></div>
+        <div class="score-sub">${pct}% · სწორი ${okCount} / ${r.length}</div></div>
+      <table class="breakdown">${bySec}</table>
+    </div>
+    <div class="res-actions"><button class="btn" id="pdfAgain" type="button">PDF-ად გადმოწერა</button></div>
+    ${bad.length ? `<section class="section"><div class="section-head"><h2>შეცდომების განხილვა</h2><span class="section-pts">${bad.length} კითხვა</span></div>${review}</section>` : ''}
+    <section class="section"><div class="section-head"><h2>სწორად უპასუხე</h2><span class="section-pts">${okCount} კითხვა</span></div>
+      <div class="ok-chips">${r.filter(x => x.status === 'ok').map(x => `<span>${x.id}</span>`).join('') || '—'}</div></section>`;
+  $('#pdfAgain').addEventListener('click', exportPdf);
+
+  document.body.classList.add('done');
+  document.querySelectorAll('.field input').forEach(i => i.disabled = true);
+  $('#timerLabel').textContent = 'ქულა';
+  $('#timer').textContent = `${fmtPts(total)}/${fmtPts(MAX)}`;
+  $('#timer').classList.remove('over');
+  $('#progLabel').textContent = 'სწორი';
+  $('#progress').textContent = `${okCount} / ${r.length}`;
+  $('#finishTop').textContent = 'PDF-ად გადმოწერა';
+  fillPrintMeta();
+}
+
+/* ---------- finish flow ---------- */
+function validateStudent() {
+  const fields = [['fFirst', 'first'], ['fLast', 'last'], ['fGroup', 'group']];
+  const missing = fields.filter(([, k]) => !(state.meta[k] || '').trim());
+  fields.forEach(([id]) => $('#' + id).classList.remove('invalid'));
+  if (!missing.length) { $('#studentError').textContent = ''; return true; }
+  missing.forEach(([id]) => $('#' + id).classList.add('invalid'));
+  $('#studentError').textContent = 'შეავსე სახელი, გვარი და ჯგუფი.';
+  $('#' + missing[0][0]).focus();
+  return false;
+}
+function askFinish() {
+  if (state.finished) return exportPdf();
+  const left = QUESTIONS.length - answeredCount();
+  $('#modalText').innerHTML = left
+    ? `<b style="color:var(--bad)">${left} კითხვა უპასუხოა.</b> დასრულების შემდეგ პასუხებს ვეღარ შეცვლი.`
+    : 'ყველა კითხვას უპასუხე. დასრულების შემდეგ პასუხებს ვეღარ შეცვლი.';
+  $('#modal').classList.add('on');
+}
+$('#modalNo').addEventListener('click', () => $('#modal').classList.remove('on'));
+$('#modalYes').addEventListener('click', () => {
+  $('#modal').classList.remove('on');
+  state.finished = { at: Date.now(), results: grade() };
+  save();
+  renderResults();
+  window.scrollTo({ top: 0 });
+  setTimeout(exportPdf, 350);
+});
+$('#finishBtn').addEventListener('click', askFinish);
+$('#finishTop').addEventListener('click', askFinish);
+
+/* ---------- PDF ---------- */
+const fmt = d => `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function fillPrintMeta() {
+  const end = state.finished ? new Date(state.finished.at) : new Date();
+  $('#printMeta').innerHTML =
+    `<span>დაწყება: <b>${fmt(new Date(state.start))}</b></span><span>დასრულება: <b>${fmt(end)}</b></span>` +
+    `<span>დახარჯული დრო: <b>${Math.round((end - state.start) / 60000)} წთ</b></span>`;
+}
+let originalTitle = document.title;
+function exportPdf() {
+  fillPrintMeta();
+  originalTitle = document.title;
+  document.title = `CSharpOOP_${state.meta.last}_${state.meta.first}_${state.meta.group}`.replace(/\s+/g, '_');
+  window.print();
+}
+window.addEventListener('afterprint', () => { document.title = originalTitle; });
+
+/* ---------- კოპირების დაბლოკვა ---------- */
+const isEditable = t => { const n = t && t.nodeType === 3 ? t.parentElement : t; return !!(n && n.closest && n.closest('input')); };
+let toastTimer;
+function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 1800); }
+['copy', 'cut'].forEach(ev => document.addEventListener(ev, e => { if (!isEditable(e.target)) { e.preventDefault(); toast('კოპირება გამორთულია'); } }));
+document.addEventListener('contextmenu', e => { if (!isEditable(e.target)) e.preventDefault(); });
+document.addEventListener('selectstart', e => { if (!isEditable(e.target)) e.preventDefault(); });
+document.addEventListener('dragstart', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  const k = (e.key || '').toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && ['c', 'x', 'a', 's', 'u'].includes(k) && !isEditable(e.target)) { e.preventDefault(); if (k === 'c' || k === 'x') toast('კოპირება გამორთულია'); }
+  if (e.key === 'F12') e.preventDefault();
+});
+
+/* ---------- timer ---------- */
+function tick() {
+  if (state.finished) return;
+  if (!state.started) { $('#timer').textContent = `${pad(DURATION_MIN)}:00`; return; }
+  const left = Math.round((state.start + DURATION_MIN * 60000 - Date.now()) / 1000), el = $('#timer');
+  if (left >= 0) { el.textContent = `${pad(Math.floor(left / 60))}:${pad(left % 60)}`; el.classList.remove('over'); }
+  else { const o = -left; el.textContent = `+${pad(Math.floor(o / 60))}:${pad(o % 60)}`; el.classList.add('over'); }
+}
+setInterval(tick, 1000); tick();
+
+/* ---------- init ---------- */
+/* ---------- საწყისი გვერდი ---------- */
+function renderIntro() {
+  const multi = QUESTIONS.some(q => q.multi);
+  $('#introStats').innerHTML = `<span>⏱ ${DURATION_MIN} წუთი</span><span>${QUESTIONS.length} კითხვა</span><span>${fmtPts(MAX)} ქულა</span><span>თითო კითხვა ${fmtPts(POINTS)} ქულა</span>`;
+  const rules = [
+    `ტესტში <b>${QUESTIONS.length} კითხვაა</b>, სულ <b>${fmtPts(MAX)} ქულა</b>. დრო: <b>${DURATION_MIN} წუთი</b>. ტაიმერი „დაწყებას“ დაჭერისთანავე ირთვება და გვერდის განახლებისას არ ჩერდება.`,
+    `კითხვების უმეტესობას <b>4 სავარაუდო პასუხი</b> აქვს და სწორი ერთია.`,
+    'კოდს არ წერ — <b>აწყობ</b>: „დაალაგე“ კითხვებში ხაზებს ▲ ▼ ღილაკებით სწორ რიგში დგამ (სრულად სწორი — სრული ქულა, ნაწილობრივ სწორ რიგს — ნაწილი); „შეავსე“ კითხვებში თითოეულ ცარიელ ადგილზე სიიდან ირჩევ (ყოველი სწორი ადგილი — ქულის ნაწილი).',
+    multi ? 'სადაც წერია <b>„შესაძლოა რამდენიმე სწორი პასუხი“</b>, მონიშნე ყველა სწორი. ყოველი სწორი მონიშვნა ქულას მატებს, ყოველი არასწორი აკლებს (მინიმუმ 0).' : null,
+    'პასუხებისა და ასაწყობი ხაზების თანმიმდევრობა ყველასთვის განსხვავებულია: „ბ“ შენთან და მეზობელთან სხვადასხვა პასუხია.',
+    'ტექსტის კოპირება, მონიშვნა და მარჯვენა ღილაკი გამორთულია.',
+    'პასუხები ავტომატურად ინახება ამ ბრაუზერში. გვერდის განახლება უსაფრთხოა, მაგრამ <b>ბრაუზერის მონაცემები არ წაშალო</b> და ტესტი სხვა ბრაუზერში არ გახსნა.',
+    'დაწყების შემდეგ სახელს, გვარს და ჯგუფს ვეღარ შეცვლი.',
+    'დრო რომ ამოიწურება, ტესტი არ დაიკეტება, მაგრამ გადაცილება წითლად აითვლება და PDF-ში ჩაიწერება.',
+    'ბოლოს დააჭირე <b>„დასრულება“</b>. ამის შემდეგ პასუხებს ვეღარ შეცვლი. გამოჩნდება შენი ქულა და შეცდომების ახსნა.',
+    'დასრულებისას PDF ავტომატურად გაიხსნება: აირჩიე <b>Save as PDF</b>, შეინახე და ფაილი ატვირთე.',
+  ].filter(Boolean);
+  $('#introRules').innerHTML = rules.map(r => `<li>${r}</li>`).join('');
+}
+function setMode() {
+  document.body.classList.toggle('intro', !state.started && !state.finished);
+}
+$('#agree').addEventListener('change', () => $('#agreeBox').classList.remove('invalid'));
+$('#startBtn').addEventListener('click', () => {
+  if (!validateStudent()) return;
+  if (!$('#agree').checked) {
+    $('#agreeBox').classList.add('invalid');
+    $('#studentError').textContent = 'დაადასტურე, რომ წესები წაიკითხე.';
+    return;
+  }
+  state.meta.first = state.meta.first.trim(); state.meta.last = state.meta.last.trim(); state.meta.group = state.meta.group.trim();
+  state.started = true;
+  state.start = Date.now();
+  save();
+  restore();
+  setMode();
+  window.scrollTo({ top: 0 });
+  tick();
+});
+
+renderIntro();
+renderExam();
+restore();
+setMode();
+if (state.finished) renderResults();
+</script>
+</body>
+</html>
