@@ -335,6 +335,20 @@ for (const q of QUESTIONS) {
   }
 }
 function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
+const perm = n => { const p = Array.from({ length: n }, (_, i) => i); for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; } return p; };
+if (!state.qorder) state.qorder = {};
+if (!state.border) state.border = {};
+for (const s of EXAM) {
+  const o = state.qorder[s.id];
+  if (!Array.isArray(o) || o.length !== s.items.length) state.qorder[s.id] = perm(s.items.length);
+  for (const q of s.items) if (q.type === 'fill') {
+    const b = state.border[q.id];
+    if (!Array.isArray(b) || b.length !== q.blanks.length) state.border[q.id] = q.blanks.map(x => perm(x.length));
+  }
+}
+const ORDERED = Object.fromEntries(EXAM.map(s => [s.id, state.qorder[s.id].map(i => s.items[i])]));
+const NUM = {};
+EXAM.forEach(s => ORDERED[s.id].forEach(q => { NUM[q.id] = Object.keys(NUM).length + 1; }));
 save();
 
 /* ---------- render exam ---------- */
@@ -347,11 +361,11 @@ function renderExam() {
         <span class="section-pts">${fmtPts(sec.items.length * POINTS)} ქულა</span></div>
       <p class="section-note">${inline(sec.note)}</p>
       ${sec.shared ? codeBlock(sec.shared, sec.sharedLang || 'csharp') : ''}
-      ${sec.items.map(q => {
+      ${ORDERED[sec.id].map(q => {
         if (q.type === 'order' || q.type === 'fill') return renderSpecial(q);
         const type = q.multi ? 'checkbox' : 'radio';
         return `<article class="q" id="q-${q.id}">
-          <div class="q-head"><span class="qid">${q.id}</span><span class="qpts">${fmtPts(POINTS)} ქულა</span>
+          <div class="q-head"><span class="qid">${NUM[q.id]}</span><span class="qpts">${fmtPts(POINTS)} ქულა</span>
             ${q.multi ? '<span class="badge">შესაძლოა რამდენიმე სწორი პასუხი</span>' : ''}</div>
           ${q.text ? `<p class="qtext">${inline(q.text)}</p>` : ''}
           ${q.code ? codeBlock(q.code, q.lang) : ''}
@@ -380,7 +394,7 @@ function fillCode(q) {
   q.blanks.forEach((opts, b) => {
     const v = picked[b] ?? -1;
     const sel = `<select class="blank ${v >= 0 ? 'set' : ''}" data-q="${q.id}" data-b="${b}"><option value="-1">${BLANK[b]} …</option>` +
-      opts.map((o, i) => `<option value="${i}" ${v === i ? 'selected' : ''}>${esc(plain(o))}</option>`).join('') + '</select>';
+      state.border[q.id][b].map(i => `<option value="${i}" ${v === i ? 'selected' : ''}>${esc(plain(opts[i]))}</option>`).join('') + '</select>';
     html = html.replace('⟦' + BLANK[b] + '⟧', sel);
   });
   return `<pre class="code">${html}</pre>`;
@@ -391,7 +405,7 @@ function renderSpecial(q) {
     ? `${q.code ? codeBlock(q.code, q.lang) : ''}<ol class="ord" id="ord-${q.id}">${orderList(q)}</ol>`
     : fillCode(q);
   return `<article class="q" id="q-${q.id}">
-    <div class="q-head"><span class="qid">${q.id}</span><span class="qpts">${fmtPts(POINTS)} ქულა</span>${badge}</div>
+    <div class="q-head"><span class="qid">${NUM[q.id]}</span><span class="qpts">${fmtPts(POINTS)} ქულა</span>${badge}</div>
     ${q.text ? `<p class="qtext">${inline(q.text)}</p>` : ''}
     ${body}
   </article>`;
@@ -594,7 +608,7 @@ function renderIntro() {
     `კითხვების უმეტესობას <b>4 სავარაუდო პასუხი</b> აქვს და სწორი ერთია.`,
     'კოდს არ წერ — <b>აწყობ</b>: „დაალაგე“ კითხვებში ხაზებს ▲ ▼ ღილაკებით სწორ რიგში დგამ (სრულად სწორი — სრული ქულა, ნაწილობრივ სწორ რიგს — ნაწილი); „შეავსე“ კითხვებში თითოეულ ცარიელ ადგილზე სიიდან ირჩევ (ყოველი სწორი ადგილი — ქულის ნაწილი).',
     multi ? 'სადაც წერია <b>„შესაძლოა რამდენიმე სწორი პასუხი“</b>, მონიშნე ყველა სწორი. ყოველი სწორი მონიშვნა ქულას მატებს, ყოველი არასწორი აკლებს (მინიმუმ 0).' : null,
-    'პასუხებისა და ასაწყობი ხაზების თანმიმდევრობა ყველასთვის განსხვავებულია: „ბ“ შენთან და მეზობელთან სხვადასხვა პასუხია.',
+    'კითხვების, პასუხებისა და ასაწყობი ხაზების თანმიმდევრობა ყველასთვის განსხვავებულია: მე-5 კითხვა და „ბ“ პასუხი შენთან და მეზობელთან სხვადასხვაა.',
     'ტექსტის კოპირება, მონიშვნა და მარჯვენა ღილაკი გამორთულია.',
     'პასუხები ავტომატურად ინახება ამ ბრაუზერში. გვერდის განახლება უსაფრთხოა, მაგრამ <b>ბრაუზერის მონაცემები არ წაშალო</b> და ტესტი სხვა ბრაუზერში არ გახსნა.',
     'დაწყების შემდეგ სახელს, გვარს და ჯგუფს ვეღარ შეცვლი.',
