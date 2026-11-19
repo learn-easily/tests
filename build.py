@@ -3,7 +3,7 @@
 #
 # courses/<კურსი>/course.json          {"title", "order"} — ერთი კურსი = ერთი ჩანართი მთავარ გვერდზე
 # courses/<კურსი>/<NN-slug>/test.html   თავად ტესტი (ერთი თვითკმარი HTML)
-# courses/<კურსი>/<NN-slug>/test.json   {"title", "topics": [...], "duration", "questions", "points"}
+# courses/<კურსი>/<NN-slug>/test.json   {"title", "badge"?, "topics": [...], "duration", "questions", "points"}
 import json, pathlib, shutil
 
 ROOT = pathlib.Path(__file__).parent

@@ -1,0 +1,17 @@
+{
+  "title": "SQL და EF Core · ვარიანტი 2",
+  "badge": "შუალედური",
+  "topics": [
+    "CRUD",
+    "SELECT",
+    "WHERE",
+    "აგრეგაცია",
+    "GROUP BY",
+    "კავშირები",
+    "JOIN",
+    "EF Core"
+  ],
+  "duration": 60,
+  "questions": 30,
+  "points": 100
+}

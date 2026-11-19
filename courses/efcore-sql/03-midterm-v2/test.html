@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL და EF Core · ვარიანტი 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1d23; --muted: #5d6573; --faint: #8a919e;
+    --bg: #eceef2; --paper: #fff; --line: #dde1e7;
+    --accent: #3346c4; --accent-soft: #eef0fc;
+    --ok: #15803d; --ok-soft: #ecfdf3; --bad: #b42318; --bad-soft: #fef3f2; --part: #b54708; --part-soft: #fffaeb;
+    --code-bg: #f6f8fa;
+    --sans: "Noto Sans Georgian", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: var(--sans); color: var(--ink); background: var(--bg); line-height: 1.55; -webkit-user-select: none; user-select: none; }
+  input { -webkit-user-select: text; user-select: text; }
+
+  .toolbar { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.94); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+  .toolbar-inner { max-width: 880px; margin: 0 auto; padding: 10px 24px; display: flex; align-items: center; gap: 20px; }
+  .tb-back { font-size: 20px; color: var(--muted); text-decoration: none; padding: 2px 6px; border-radius: 6px; }
+  .tb-back:hover { color: var(--ink); background: var(--bg); }
+  .tb-item { display: flex; flex-direction: column; line-height: 1.2; }
+  .tb-label { font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; }
+  .tb-value { font-family: var(--mono); font-weight: 600; font-size: 17px; }
+  .tb-value.over { color: var(--bad); }
+  .tb-spacer { flex: 1; }
+  .btn { font-family: var(--sans); font-size: 14px; font-weight: 600; border: 0; border-radius: 8px; padding: 10px 18px; cursor: pointer; background: var(--accent); color: #fff; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+  .btn.finish-btn { background: var(--ink); }
+
+  .paper { max-width: 880px; margin: 28px auto 60px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 48px 56px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.04); }
+  .exam-head { border-bottom: 2px solid var(--ink); padding-bottom: 20px; margin-bottom: 8px; }
+  .eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  h1 { font-size: 28px; margin: 6px 0 4px; line-height: 1.25; }
+  .exam-meta { color: var(--muted); font-size: 14px; display: flex; gap: 18px; flex-wrap: wrap; }
+  .student { display: grid; grid-template-columns: 1fr 1fr 160px; gap: 14px; margin: 22px 0 6px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+  .field input { width: 100%; font-family: var(--sans); font-size: 15px; border: 0; border-bottom: 1.5px solid var(--ink); padding: 6px 2px; outline: none; background: transparent; }
+  .field input:focus { border-bottom-color: var(--accent); }
+  .field input.invalid { border-bottom-color: var(--bad); background: var(--bad-soft); }
+  .field input:disabled { color: var(--ink); -webkit-text-fill-color: var(--ink); }
+  .student-error { color: var(--bad); font-size: 13px; min-height: 18px; }
+  .print-meta { display: none; }
+  .rules { background: #f7f8fa; border: 1px solid var(--line); border-radius: 6px; padding: 14px 18px; font-size: 14px; color: #333a45; margin-top: 10px; }
+  .rules ol { margin: 6px 0 0; padding-left: 20px; } .rules li { margin: 2px 0; }
+
+  .section { margin-top: 44px; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid var(--ink); padding-bottom: 6px; margin-bottom: 6px; }
+  .section-head h2 { font-size: 20px; margin: 0; }
+  .section-head h2 .sec-letter { color: var(--accent); margin-right: 6px; }
+  .section-pts { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .section-note { font-size: 14px; color: var(--muted); margin: 6px 0 14px; }
+
+  .q { padding: 20px 0; border-bottom: 1px dashed var(--line); break-inside: avoid; page-break-inside: avoid; }
+  .q:last-child { border-bottom: 0; }
+  .q-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .qid { font-family: var(--mono); font-weight: 600; font-size: 13px; background: var(--ink); color: #fff; border-radius: 4px; padding: 2px 8px; }
+  .qpts { font-size: 12px; color: var(--faint); }
+  .ord { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 5px; counter-reset: o; }
+  .ord li { display: flex; align-items: center; gap: 10px; border: 1.5px solid var(--line); border-radius: 8px; padding: 4px 6px 4px 10px; background: var(--code-bg); }
+  .ord li::before { counter-increment: o; content: counter(o); font: 600 12px var(--mono); color: var(--muted); width: 18px; text-align: right; flex: none; }
+  .ord li pre { margin: 0; flex: 1; font: 14px/1.5 var(--mono); white-space: pre; overflow-x: auto; }
+  .ord li .mv { display: flex; gap: 4px; flex: none; }
+  .ord li .mv button { width: 30px; height: 28px; border: 1px solid var(--line); border-radius: 6px; background: #fff; cursor: pointer; font-size: 13px; color: var(--ink); }
+  .ord li .mv button:hover { border-color: var(--accent); color: var(--accent); }
+  .ord li .mv button:disabled { opacity: .3; cursor: default; }
+  .ord li.moved { border-color: var(--accent); }
+  .ord-hint { font-size: 12.5px; color: var(--muted); margin: 0 0 6px; }
+  pre.code select.blank { font: 600 13.5px var(--mono); border: 1.5px dashed var(--accent); border-radius: 6px; background: var(--accent-soft); color: var(--ink); padding: 1px 4px; margin: 0 2px; }
+  pre.code select.blank.set { border-style: solid; }
+  .rv-ord { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+  .rv-ord > div { min-width: 0; }
+  .rv-ord h4 { margin: 0 0 4px; font-size: 13px; color: var(--muted); }
+  .rv-ord pre.code { margin: 0; }
+  .rv-fill { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+  .rv-fill li { border: 1.5px solid var(--line); border-radius: 8px; padding: 7px 12px; font-size: 14.5px; }
+  .rv-fill li.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .rv-fill li.bad { border-color: var(--bad); background: var(--bad-soft); }
+  @media print { .ord li .mv { display: none; } }
+  .badge { font-size: 11.5px; font-weight: 600; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 2px 10px; }
+  .qtext { margin: 0 0 10px; font-size: 15.5px; }
+  code.inline { font-family: var(--mono); font-size: .88em; background: var(--code-bg); border: 1px solid #e6e9ee; border-radius: 4px; padding: 1px 5px; }
+
+  pre.code { margin: 6px 0 14px; background: var(--code-bg); border: 1px solid #e3e7ec; border-radius: 6px; padding: 12px 0; overflow-x: auto;
+    font-family: var(--mono); font-size: 13.5px; line-height: 1.6; counter-reset: ln; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  pre.code .line { display: block; padding: 0 16px 0 0; white-space: pre; }
+  pre.code .line::before { counter-increment: ln; content: counter(ln); display: inline-block; width: 36px; margin-right: 14px; text-align: right;
+    color: #b3b9c3; border-right: 1px solid #e3e7ec; padding-right: 8px; }
+  .k { color: #0033b3; font-weight: 600; } .s { color: #067d17; } .n { color: #1750eb; } .c { color: #8c8c8c; font-style: italic; } .t { color: #00627a; } .a { color: #9e880d; }
+
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .opt { display: flex; align-items: flex-start; gap: 10px; border: 1.5px solid var(--line); border-radius: 8px; padding: 9px 12px; cursor: pointer;
+    transition: border-color .12s, background .12s; font-size: 14.5px; }
+  .opt:hover { border-color: #b8bfca; }
+  .opt input { position: absolute; opacity: 0; pointer-events: none; }
+  .letter { flex: none; width: 24px; height: 24px; border: 1.5px solid #b8bfca; display: grid; place-items: center; font-weight: 600; font-size: 13px; color: var(--muted); }
+  .opt.radio .letter { border-radius: 50%; } .opt.check .letter { border-radius: 5px; }
+  .opt.checked { border-color: var(--accent); background: var(--accent-soft); }
+  .opt.checked .letter { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .otext { padding-top: 1px; }
+
+  .finish { margin-top: 48px; padding-top: 24px; border-top: 2px solid var(--ink); display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .finish p { margin: 0; color: var(--muted); font-size: 14px; max-width: 520px; }
+
+  /* ---------- results ---------- */
+  #results { display: none; }
+  body.done #results { display: block; }
+  body.done #exam, body.done .finish, body.done .rules { display: none; }
+  .score-card { margin-top: 28px; display: grid; grid-template-columns: 220px 1fr; gap: 28px; align-items: center;
+    border: 1.5px solid var(--ink); border-radius: 10px; padding: 24px 28px; }
+  .score-big { font-family: var(--mono); font-weight: 700; font-size: 52px; line-height: 1; }
+  .score-big small { font-size: 20px; color: var(--muted); font-weight: 600; }
+  .score-sub { color: var(--muted); font-size: 14px; margin-top: 8px; }
+  .breakdown { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .breakdown td { padding: 6px 4px; border-bottom: 1px solid var(--line); }
+  .breakdown td:last-child { text-align: right; white-space: nowrap; font-family: var(--mono); font-weight: 600; }
+  .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; min-width: 80px; }
+  .bar i { display: block; height: 100%; background: var(--accent); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .res-actions { display: flex; gap: 10px; margin-top: 18px; }
+
+  .rv { padding: 18px 0; border-bottom: 1px dashed var(--line); break-inside: avoid; page-break-inside: avoid; }
+  .rv-status { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 2px 10px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rv-status.wrong { color: var(--bad); background: var(--bad-soft); }
+  .rv-status.partial { color: var(--part); background: var(--part-soft); }
+  .rv-status.empty { color: var(--muted); background: #f2f4f7; }
+  .rv-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+  .rv-list li { display: flex; gap: 10px; align-items: flex-start; border: 1.5px solid var(--line); border-radius: 8px; padding: 7px 12px; font-size: 14.5px;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rv-list li .mk { flex: none; width: 20px; font-weight: 700; text-align: center; }
+  .rv-list li.correct { border-color: var(--ok); background: var(--ok-soft); }
+  .rv-list li.correct .mk { color: var(--ok); }
+  .rv-list li.picked-wrong { border-color: var(--bad); background: var(--bad-soft); }
+  .rv-list li.picked-wrong .mk { color: var(--bad); }
+  .rv-list li .you { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; font-weight: 600; }
+  .why { margin-top: 10px; background: #f7f8fa; border-left: 3px solid var(--accent); padding: 10px 14px; font-size: 14.5px; border-radius: 0 6px 6px 0;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .why b { color: var(--accent); }
+  .ok-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .ok-chips span { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--ok); background: var(--ok-soft); border: 1px solid #abefc6; border-radius: 6px; padding: 2px 8px;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  .modal { position: fixed; inset: 0; background: rgba(16,24,40,.45); display: none; place-items: center; z-index: 60; padding: 20px; }
+  .modal.on { display: grid; }
+  .modal-box { background: #fff; border-radius: 12px; padding: 26px 28px; max-width: 440px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,.2); }
+  .modal-box h3 { margin: 0 0 8px; font-size: 19px; }
+  .modal-box p { margin: 0 0 18px; color: var(--muted); font-size: 14.5px; }
+  .modal-box .row { display: flex; gap: 10px; justify-content: flex-end; }
+
+  .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px); background: var(--ink); color: #fff; font-size: 14px; padding: 10px 18px;
+    border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 70; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ---------- intro ---------- */
+  #intro { display: none; min-height: 100vh; padding: 48px 20px 80px; }
+  body.intro #intro { display: block; }
+  body.intro .toolbar, body.intro .paper { display: none; }
+  .intro-card { max-width: 760px; margin: 0 auto; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 44px 52px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.05); }
+  .intro-back { display: inline-block; font-size: 14px; color: var(--muted); text-decoration: none; margin-bottom: 18px; }
+  .intro-back:hover { color: var(--ink); }
+  .intro-stats { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0 6px; }
+  .intro-stats span { font-size: 14px; background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 5px 14px; font-weight: 600; }
+  .intro-card h2 { font-size: 17px; margin: 30px 0 4px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  .intro-rules { margin: 12px 0 0; padding-left: 22px; font-size: 15px; color: #2b3039; }
+  .intro-rules li { margin: 7px 0; padding-left: 4px; }
+  .agree { display: flex; gap: 10px; align-items: flex-start; margin-top: 24px; font-size: 15px; cursor: pointer; padding: 12px 14px;
+    border: 1.5px solid var(--line); border-radius: 8px; }
+  .agree input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent); flex: none; }
+  .agree.invalid { border-color: var(--bad); background: var(--bad-soft); }
+  .start-row { display: flex; align-items: center; gap: 16px; margin-top: 22px; flex-wrap: wrap; }
+  .start-row .btn { font-size: 16px; padding: 13px 28px; }
+  .start-row small { color: var(--muted); font-size: 13.5px; }
+  .student-line { margin-top: 16px; font-size: 15px; display: flex; gap: 22px; flex-wrap: wrap; }
+  .student-line span { color: var(--muted); }
+  .student-line b { color: var(--ink); }
+
+  @media (max-width: 720px) {
+    .paper { padding: 28px 20px; margin: 0; border-radius: 0; }
+    .student, .opts, .score-card { grid-template-columns: 1fr; }
+    .intro-card { padding: 28px 20px; }
+  }
+
+  @page { size: A4; margin: 14mm 14mm 16mm; }
+  @media print {
+    body { background: #fff; }
+    #intro, .toolbar, .rules, .finish, .toast, .student-error, .modal, .res-actions { display: none !important; }
+    .paper { margin: 0; padding: 0; border: 0; box-shadow: none; max-width: none; }
+    .print-meta { display: flex; gap: 22px; flex-wrap: wrap; font-size: 12px; color: #333; margin-top: 10px; }
+    .section { margin-top: 26px; } .section-head { break-after: avoid; }
+    .q, .rv { padding: 12px 0; }
+    .field input { border-bottom: 1px solid #000; }
+  }
+</style>
+</head>
+<body>
+
+<section id="intro">
+  <div class="intro-card">
+    <a class="intro-back" href="../../">← ყველა ტესტი</a>
+    <div class="eyebrow">შუალედური გამოცდა</div>
+    <h1>SQL და EF Core · ვარიანტი 2</h1>
+    <div class="exam-meta"><span>CRUD · SELECT · WHERE · აგრეგაცია · GROUP BY · კავშირები · JOIN · EF Core</span></div>
+    <div class="intro-stats" id="introStats"></div>
+
+    <h2>შენი მონაცემები</h2>
+    <div class="student">
+      <div class="field"><label for="fFirst">სახელი</label><input id="fFirst" autocomplete="off"></div>
+      <div class="field"><label for="fLast">გვარი</label><input id="fLast" autocomplete="off"></div>
+      <div class="field"><label for="fGroup">ჯგუფი</label><input id="fGroup" autocomplete="off"></div>
+    </div>
+
+    <h2>წესები და პირობები</h2>
+    <ol class="intro-rules" id="introRules"></ol>
+
+    <label class="agree" id="agreeBox"><input type="checkbox" id="agree"><span>წესები წავიკითხე და ვეთანხმები</span></label>
+    <div class="student-error" id="studentError"></div>
+    <div class="start-row">
+      <button class="btn" id="startBtn" type="button">ტესტის დაწყება</button>
+      <small>დაჭერისთანავე ჩაირთვება ტაიმერი.</small>
+    </div>
+  </div>
+</section>
+
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <a class="tb-back" href="../../" title="ყველა ტესტი">←</a>
+    <div class="tb-item"><span class="tb-label" id="timerLabel">დარჩენილი დრო</span><span class="tb-value" id="timer">--:--</span></div>
+    <div class="tb-item"><span class="tb-label" id="progLabel">პასუხი</span><span class="tb-value" id="progress">0 / 0</span></div>
+    <div class="tb-spacer"></div>
+    <button class="btn finish-btn" id="finishTop" type="button">დასრულება</button>
+  </div>
+</div>
+
+<main class="paper">
+  <header class="exam-head">
+    <div class="eyebrow">შუალედური გამოცდა</div>
+    <h1>SQL და EF Core · ვარიანტი 2</h1>
+    <div class="exam-meta"><span>CRUD · SELECT · WHERE · აგრეგაცია · GROUP BY · კავშირები · JOIN · EF Core</span></div>
+    <div class="exam-meta" style="margin-top:4px">
+      <span>⏱ 60 წუთი</span><span><b id="qCount"></b> კითხვა</span><span>მაქსიმუმი: <b id="maxPts"></b> ქულა</span>
+    </div>
+    <div class="student-line"><span>სტუდენტი: <b id="stName"></b></span><span>ჯგუფი: <b id="stGroup"></b></span></div>
+    <div class="print-meta" id="printMeta"></div>
+  </header>
+
+  <section id="results"></section>
+  <div id="exam"></div>
+
+  <div class="finish">
+    <p>დარწმუნდი, რომ სახელი, გვარი და ჯგუფი შევსებულია და ყველა კითხვას უპასუხე. დასრულების შემდეგ პასუხებს ვეღარ შეცვლი.</p>
+    <button class="btn finish-btn" id="finishBtn" type="button">დასრულება</button>
+  </div>
+</main>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3>დავასრულოთ ტესტი?</h3>
+    <p id="modalText"></p>
+    <div class="row">
+      <button class="btn ghost" id="modalNo" type="button">დაბრუნება</button>
+      <button class="btn finish-btn" id="modalYes" type="button">დასრულება</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const EXAM = [{"id": "A", "title": "CRUD: INSERT · UPDATE · DELETE", "note": "კავშირები: `Songs.ArtistId → Artists.Id`, `PlaylistSongs.PlaylistId → Playlists.Id`, `PlaylistSongs.SongId → Songs.Id`. ყოველი კითხვა ცხრილების **ამ საწყისი მდგომარეობიდან** იწყება: წინა კითხვის INSERT/UPDATE/DELETE მონაცემებს არ ცვლის.", "items": [{"id": "A1", "type": "mc", "text": "რომელი ბრძანება დააბრუნებს **შეცდომას**?", "options": ["`INSERT INTO Songs (Title, Plays, Seconds) VALUES ('Outro', 0, 90);`", "`INSERT INTO Songs (Title, Plays, Seconds, ArtistId) VALUES ('Paradise', 0, 278, 9);`", "`INSERT INTO Songs (Plays, Seconds, ArtistId) VALUES (10, 200, 1);`", "`INSERT INTO Songs (Title, Plays, Seconds, ArtistId) VALUES ('Hello', 0, 295, 3);`"], "multi": true}, {"id": "A2", "type": "mc", "text": "რამდენ ხაზს შეცვლის?", "code": "UPDATE Songs\nSET Plays = 0\nWHERE ArtistId = 2;", "lang": "sql", "options": ["0", "2", "1", "6"]}, {"id": "A3", "type": "mc", "text": "რა მოხდება?", "code": "DELETE FROM PlaylistSongs;", "lang": "sql", "options": ["წაიშლება PlaylistSongs-ის, Songs-ის და Playlists-ის ყველა ხაზი", "მთლიანად წაიშლება PlaylistSongs ცხრილი", "PlaylistSongs-იდან ყველა ხაზი წაიშლება, ცხრილი რჩება; Songs და Playlists არ იცვლება", "შეცდომა: DELETE-ს WHERE სჭირდება"]}, {"id": "A4", "type": "fill", "text": "შეავსე: ახალი პლეილისტი 'Party' და Intro-ს (Id = 6) სახელის შეცვლა.", "code": "⟦a⟧ INTO Playlists (Name)\n⟦b⟧ ('Party');\n\n⟦c⟧ Songs\nSET Title = 'Intro (Live)'\nWHERE Id = 6;", "lang": "sql", "blanks": [["`CREATE`", "`ADD`", "`SELECT`", "`INSERT`"], ["`SET`", "`WITH`", "`INTO`", "`VALUES`"], ["`ALTER`", "`UPDATE`", "`CHANGE`", "`INSERT`"]]}, {"id": "A5", "type": "mc", "text": "რა მოხდება?", "code": "DELETE FROM Artists\nWHERE Id = 3;", "lang": "sql", "options": ["შეცდომა: Artists-ზე Songs მიუთითებს (FK)", "არაფერი წაიშლება", "წაიშლება Adele და მისი ყველა სიმღერა", "წაიშლება 1 ხაზი (Adele) — მასზე არცერთი სიმღერა არ მიუთითებს"]}, {"id": "A6", "type": "mc", "text": "Believer (Songs.Id = 1) სრულად უნდა წავშალოთ. ის ორ პლეილისტშია. რომელი ვარიანტი იმუშავებს შეცდომის გარეშე?", "options": ["ჯერ `DELETE FROM Songs WHERE Id = 1;`, მერე `DELETE FROM PlaylistSongs WHERE SongId = 1;`", "მხოლოდ `DELETE FROM Songs WHERE Id = 1;`", "ჯერ `DELETE FROM PlaylistSongs WHERE SongId = 1;`, მერე `DELETE FROM Songs WHERE Id = 1;`", "`DELETE FROM Songs, PlaylistSongs WHERE Id = 1;`"]}], "shared": "CREATE TABLE Artists (\n    Id   INT PRIMARY KEY IDENTITY(1,1),\n    Name NVARCHAR(50) NOT NULL\n);\n\nCREATE TABLE Songs (\n    Id       INT PRIMARY KEY IDENTITY(1,1),\n    Title    NVARCHAR(100) NOT NULL,\n    Plays    INT NOT NULL,\n    Seconds  INT NOT NULL,\n    ArtistId INT NULL REFERENCES Artists(Id)\n);\n\nCREATE TABLE Playlists (\n    Id   INT PRIMARY KEY IDENTITY(1,1),\n    Name NVARCHAR(50) NOT NULL\n);\n\nCREATE TABLE PlaylistSongs (\n    PlaylistId INT NOT NULL REFERENCES Playlists(Id),\n    SongId     INT NOT NULL REFERENCES Songs(Id),\n    PRIMARY KEY (PlaylistId, SongId)\n);\n\nArtists                   Playlists\nId | Name                 Id | Name\n---+----------------      ---+------\n1  | Imagine Dragons      1  | Gym\n2  | Coldplay             2  | Chill\n3  | Adele                3  | Road\n\nSongs                                          PlaylistSongs\nId | Title    | Plays | Seconds | ArtistId     PlaylistId | SongId\n---+----------+-------+---------+---------     -----------+-------\n1  | Believer | 900   | 204     | 1            1          | 1\n2  | Thunder  | 700   | 187     | 1            1          | 2\n3  | Yellow   | 400   | 269     | 2            1          | 5\n4  | Fix You  | 300   | 295     | 2            2          | 3\n5  | Demons   | 500   | 177     | 1            2          | 4\n6  | Intro    | 0     | 60      | NULL         3          | 1\n                                               3          | 3", "sharedLang": "sql"}, {"id": "B", "title": "SELECT · WHERE · ORDER BY", "note": "კავშირები: `Songs.ArtistId → Artists.Id`, `PlaylistSongs.PlaylistId → Playlists.Id`, `PlaylistSongs.SongId → Songs.Id`. ყოველი კითხვა ცხრილების **ამ საწყისი მდგომარეობიდან** იწყება: წინა კითხვის INSERT/UPDATE/DELETE მონაცემებს არ ცვლის.", "items": [{"id": "B1", "type": "mc", "text": "რას დააბრუნებს?", "code": "SELECT Title\nFROM Songs\nWHERE Plays > 400 OR Seconds > 280;", "lang": "sql", "options": ["Believer, Thunder, Demons", "Believer, Thunder, Fix You, Demons", "Fix You", "Believer, Thunder, Yellow, Fix You, Demons"]}, {"id": "B2", "type": "mc", "text": "რას დააბრუნებს?", "code": "SELECT TOP 3 Title\nFROM Songs\nORDER BY Seconds;", "lang": "sql", "options": ["Intro, Thunder, Demons", "Believer, Thunder, Yellow", "Intro, Demons, Thunder", "Fix You, Yellow, Believer"]}, {"id": "B3", "type": "mc", "text": "რომელი WHERE დააბრუნებს **მხოლოდ** Intro-ს?", "options": ["`WHERE Title LIKE 'I%'`", "`WHERE ArtistId = NULL`", "`WHERE Seconds > 60`", "`WHERE ArtistId IS NULL`"], "multi": true}, {"id": "B4", "type": "mc", "text": "რამდენ ხაზს დააბრუნებს?", "code": "SELECT Title\nFROM Songs\nWHERE Title LIKE '%er%';", "lang": "sql", "options": ["0", "1", "2", "3"]}, {"id": "B5", "type": "mc", "text": "რამდენ ხაზს დააბრუნებს?", "code": "SELECT Title\nFROM Songs\nWHERE Plays BETWEEN 400 AND 700;", "lang": "sql", "options": ["1", "3", "2", "4"]}, {"id": "B6", "type": "mc", "text": "რამდენ ხაზს დააბრუნებს?", "code": "SELECT DISTINCT SongId\nFROM PlaylistSongs;", "lang": "sql", "options": ["6", "5", "3", "7"]}, {"id": "B7", "type": "order", "text": "დაალაგე: Imagine Dragons-ის (ArtistId = 1) სიმღერები, რომლებსაც 600-ზე მეტი მოსმენა აქვს, სათაურის მიხედვით.", "lang": "sql", "lines": ["ORDER BY Title;", "WHERE ArtistId = 1 AND Plays > 600", "SELECT Title, Plays", "FROM Songs"]}], "shared": "Artists                   Playlists\nId | Name                 Id | Name\n---+----------------      ---+------\n1  | Imagine Dragons      1  | Gym\n2  | Coldplay             2  | Chill\n3  | Adele                3  | Road\n\nSongs                                          PlaylistSongs\nId | Title    | Plays | Seconds | ArtistId     PlaylistId | SongId\n---+----------+-------+---------+---------     -----------+-------\n1  | Believer | 900   | 204     | 1            1          | 1\n2  | Thunder  | 700   | 187     | 1            1          | 2\n3  | Yellow   | 400   | 269     | 2            1          | 5\n4  | Fix You  | 300   | 295     | 2            2          | 3\n5  | Demons   | 500   | 177     | 1            2          | 4\n6  | Intro    | 0     | 60      | NULL         3          | 1\n                                               3          | 3", "sharedLang": "text"}, {"id": "C", "title": "აგრეგაცია: COUNT · SUM · AVG · GROUP BY", "note": "კავშირები: `Songs.ArtistId → Artists.Id`, `PlaylistSongs.PlaylistId → Playlists.Id`, `PlaylistSongs.SongId → Songs.Id`. ყოველი კითხვა ცხრილების **ამ საწყისი მდგომარეობიდან** იწყება: წინა კითხვის INSERT/UPDATE/DELETE მონაცემებს არ ცვლის.", "items": [{"id": "C1", "type": "mc", "text": "რას დააბრუნებს?", "code": "SELECT COUNT(*)\nFROM Songs\nWHERE Seconds < 200;", "lang": "sql", "options": ["4", "3", "6", "2"]}, {"id": "C2", "type": "mc", "text": "რას დააბრუნებს?", "code": "SELECT COUNT(*), COUNT(ArtistId)\nFROM Songs;", "lang": "sql", "options": ["`6 | 6`", "`5 | 5`", "`6 | 3`", "`6 | 5`"]}, {"id": "C3", "type": "mc", "text": "რას დააბრუნებს?", "code": "SELECT SUM(Plays)\nFROM Songs\nWHERE ArtistId = 1;", "lang": "sql", "options": ["2800", "3", "2100", "900"]}, {"id": "C4", "type": "mc", "text": "რას დააბრუნებს?", "code": "SELECT MAX(Plays), MIN(Seconds), AVG(Plays)\nFROM Songs\nWHERE ArtistId = 2;", "lang": "sql", "options": ["`300 | 269 | 350`", "`400 | 269 | 700`", "`400 | 269 | 350`", "`400 | 295 | 350`"]}, {"id": "C5", "type": "mc", "text": "რამდენ ხაზს დააბრუნებს და რომელია პირველი?", "code": "SELECT ArtistId, SUM(Plays) AS Total\nFROM Songs\nGROUP BY ArtistId\nORDER BY Total DESC;", "lang": "sql", "options": ["3 ხაზი, პირველი — `2 | 700`", "3 ხაზი, პირველი — `1 | 2100`", "2 ხაზი, პირველი — `1 | 2100`", "6 ხაზი, პირველი — `1 | 900`"]}, {"id": "C6", "type": "mc", "text": "რომელი ბრძანება დააბრუნებს **შეცდომას**?", "options": ["`SELECT ArtistId, COUNT(*) FROM Songs GROUP BY ArtistId HAVING COUNT(*) > 1;`", "`SELECT ArtistId, Title, COUNT(*) FROM Songs GROUP BY ArtistId;`", "`SELECT ArtistId, COUNT(*) FROM Songs WHERE COUNT(*) > 1 GROUP BY ArtistId;`", "`SELECT COUNT(*) FROM Songs WHERE Plays > 100;`"], "multi": true}, {"id": "C7", "type": "fill", "text": "შეავსე: თითო შემსრულებლის სიმღერების საშუალო ხანგრძლივობა, მხოლოდ ის, სადაც საშუალო 200 წამზე მეტია.", "code": "SELECT ArtistId, ⟦a⟧(Seconds) AS AvgSeconds\nFROM Songs\n⟦b⟧ ArtistId IS NOT NULL\nGROUP BY ⟦c⟧\nHAVING AVG(Seconds) > 200;", "lang": "sql", "blanks": [["`COUNT`", "`SUM`", "`MAX`", "`AVG`"], ["`ON`", "`WHERE`", "`HAVING`", "`AND`"], ["`Seconds`", "`ArtistId`", "`AvgSeconds`", "`Title`"]]}], "shared": "Artists                   Playlists\nId | Name                 Id | Name\n---+----------------      ---+------\n1  | Imagine Dragons      1  | Gym\n2  | Coldplay             2  | Chill\n3  | Adele                3  | Road\n\nSongs                                          PlaylistSongs\nId | Title    | Plays | Seconds | ArtistId     PlaylistId | SongId\n---+----------+-------+---------+---------     -----------+-------\n1  | Believer | 900   | 204     | 1            1          | 1\n2  | Thunder  | 700   | 187     | 1            1          | 2\n3  | Yellow   | 400   | 269     | 2            1          | 5\n4  | Fix You  | 300   | 295     | 2            2          | 3\n5  | Demons   | 500   | 177     | 1            2          | 4\n6  | Intro    | 0     | 60      | NULL         3          | 1\n                                               3          | 3", "sharedLang": "text"}, {"id": "D", "title": "კავშირები და JOIN", "note": "კავშირები: `Songs.ArtistId → Artists.Id`, `PlaylistSongs.PlaylistId → Playlists.Id`, `PlaylistSongs.SongId → Songs.Id`. ყოველი კითხვა ცხრილების **ამ საწყისი მდგომარეობიდან** იწყება: წინა კითხვის INSERT/UPDATE/DELETE მონაცემებს არ ცვლის.", "items": [{"id": "D1", "type": "mc", "text": "`Songs.ArtistId` — `REFERENCES Artists(Id)`. რას ნიშნავს ეს?", "options": ["Artists-ში ახალი ხაზი ავტომატურად შეიქმნება ყოველ ახალ სიმღერაზე", "`Songs.ArtistId`-ში შეიძლება ჩაიწეროს მხოლოდ ისეთი Id, რომელიც Artists-ში არსებობს (ან NULL)", "შემსრულებლის წაშლისას მისი სიმღერები ავტომატურად წაიშლება", "`ArtistId` Songs-ში უნიკალური უნდა იყოს"]}, {"id": "D2", "type": "mc", "text": "რა კავშირია Playlists-სა და Songs-ს შორის?", "options": ["ერთი-ბევრთან (1:N): FK არის `Songs.PlaylistId`", "კავშირი არ არის — PlaylistSongs ცალკე ცხრილია", "ერთი-ერთთან (1:1)", "ბევრი-ბევრთან (N:N): პლეილისტში ბევრი სიმღერაა და ერთი სიმღერა ბევრ პლეილისტშია — ამიტომ გვაქვს PlaylistSongs"]}, {"id": "D3", "type": "mc", "text": "რამდენ ხაზს დააბრუნებს?", "code": "SELECT s.Title, a.Name\nFROM Songs s\nINNER JOIN Artists a ON a.Id = s.ArtistId;", "lang": "sql", "options": ["3", "18", "6", "5"]}, {"id": "D4", "type": "mc", "text": "რამდენ ხაზს დააბრუნებს?", "code": "SELECT a.Name, s.Title\nFROM Artists a\nLEFT JOIN Songs s ON s.ArtistId = a.Id;", "lang": "sql", "options": ["3 — თითო შემსრულებელი ერთხელ", "6 — Adele-ს ხაზში `Title` NULL-ია", "5 — Adele არ ჩანს", "7 — Intro-ც ჩანს"]}, {"id": "D5", "type": "mc", "text": "რას დააბრუნებს?", "code": "SELECT p.Name, COUNT(*) AS SongCount\nFROM Playlists p\nINNER JOIN PlaylistSongs ps ON ps.PlaylistId = p.Id\nGROUP BY p.Name;", "lang": "sql", "options": ["Gym 3, Chill 2", "Gym 3, Chill 2, Road 2", "Gym 1, Chill 1, Road 1", "ერთ ხაზს: 7"]}, {"id": "D6", "type": "fill", "text": "შეავსე: Chill პლეილისტის სიმღერების სათაურები (სამი ცხრილი).", "code": "SELECT s.Title\nFROM Playlists p\nINNER JOIN PlaylistSongs ps ON ps.PlaylistId = ⟦a⟧\nINNER JOIN Songs s ⟦b⟧ s.Id = ps.SongId\n⟦c⟧ p.Name = 'Chill';", "lang": "sql", "blanks": [["`ps.SongId`", "`p.Id`", "`s.Id`", "`p.Name`"], ["`AS`", "`WHERE`", "`AND`", "`ON`"], ["`GROUP BY`", "`WHERE`", "`HAVING`", "`ON`"]]}], "shared": "Artists                   Playlists\nId | Name                 Id | Name\n---+----------------      ---+------\n1  | Imagine Dragons      1  | Gym\n2  | Coldplay             2  | Chill\n3  | Adele                3  | Road\n\nSongs                                          PlaylistSongs\nId | Title    | Plays | Seconds | ArtistId     PlaylistId | SongId\n---+----------+-------+---------+---------     -----------+-------\n1  | Believer | 900   | 204     | 1            1          | 1\n2  | Thunder  | 700   | 187     | 1            1          | 2\n3  | Yellow   | 400   | 269     | 2            1          | 5\n4  | Fix You  | 300   | 295     | 2            2          | 3\n5  | Demons   | 500   | 177     | 1            2          | 4\n6  | Intro    | 0     | 60      | NULL         3          | 1\n                                               3          | 3", "sharedLang": "text"}, {"id": "E", "title": "EF Core: დაკავშირება და კავშირები", "note": "კონსოლის აპლიკაცია, SQL Server. Nullable გაფრთხილებები ყურადღებას არ საჭიროებს.", "items": [{"id": "E1", "type": "order", "text": "დაალაგე DbContext კლასის ხაზები. `DbSet` property `OnConfiguring`-მდე წერია.", "lang": "csharp", "lines": ["    public DbSet<Song> Songs { get; set; }", "        optionsBuilder.UseSqlServer(\"Server=localhost;Database=MusicDb;Trusted_Connection=True;\");", "    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)", "    {", "{", "    }", "}", "public class MusicContext : DbContext"]}, {"id": "E2", "type": "mc", "text": "Playlist და Song — ბევრი-ბევრთან. რა უნდა დავწეროთ კლასებში, რომ EF Core-მა ეს კავშირი ააწყოს?", "options": ["შეუძლებელია: EF Core ბევრი-ბევრთან კავშირს ვერ აწყობს", "Playlist-ში `int SongId`, Song-ში `int PlaylistId`", "Playlist-ში `List<Song> Songs`, Song-ში `List<Playlist> Playlists`", "მხოლოდ Song-ში `Playlist Playlist`"]}, {"id": "E3", "type": "fill", "text": "შეავსე: ერთი-ბევრთან კავშირი — შემსრულებელს ბევრი სიმღერა აქვს, სიმღერა შეიძლება შემსრულებლის გარეშეც იყოს.", "code": "public class Artist\n{\n    public int Id { get; set; }\n    public string Name { get; set; } = \"\";\n    public ⟦a⟧ Songs { get; set; } = new();\n}\n\npublic class Song\n{\n    public int Id { get; set; }\n    public string Title { get; set; } = \"\";\n    public int? ⟦b⟧ { get; set; }\n    public ⟦c⟧? Artist { get; set; }\n}", "lang": "csharp", "blanks": [["`Song`", "`List<Song>`", "`int`", "`List<Artist>`"], ["`SongId`", "`Id`", "`ArtistId`", "`Artist`"], ["`List<Artist>`", "`int`", "`Artist`", "`Song`"]]}, {"id": "E4", "type": "mc", "text": "წინა კითხვის Song-ში `int? ArtistId` შევცვალეთ `int ArtistId`-ით. რა შეიცვლება ბაზაში?", "options": ["არაფერი — `int` და `int?` ბაზისთვის ერთია", "კავშირი გაქრება", "`ArtistId` უნიკალური გახდება", "`ArtistId` სვეტი `NOT NULL` გახდება: ყოველ სიმღერას შემსრულებელი აუცილებლად უნდა ჰყავდეს"]}]}];
+const POINTS = 100 / 30;
+const DURATION_MIN = 60;
+const K = "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";
+const S = "le-sqlef-v2-81e3fa5d";
+const LETTERS = ['ა', 'ბ', 'გ', 'დ'];
+const STORE_KEY = 'exam:' + location.pathname;
+
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const inline = s => esc(s).replace(/`([^`]+)`/g, '<code class="inline">$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+const pad = n => String(n).padStart(2, '0');
+const fmtPts = n => (Math.round(n * 100) / 100).toString();
+const QUESTIONS = EXAM.flatMap(s => s.items.map(q => ({ ...q, sec: s.id })));
+const MAX = QUESTIONS.length * POINTS;
+
+/* ---------- highlight ---------- */
+const KW = {
+  text: /(?!)/g,
+  csharp: /(\/\/[^\n]*)|(\$?"""[\s\S]*?"""|\$?"(?:[^"\\\n]|\\.)*")|(\b\d+(?:\.\d+)?\b)|\b(int|double|decimal|string|bool|object|void|static|return|if|else|for|foreach|in|while|new|true|false|var|public|private|protected|readonly|class|record|struct|interface|abstract|virtual|override|sealed|base|this|null|is|as|get|set|using|try|catch|finally|throw|switch|out|with|nameof)\b|\b(Console|List|DbContext|DbSet|DbContextOptionsBuilder|GameContext|MusicContext|Guild|Player|Item|Artist|Song|Playlist)\b|(\[[A-Za-z]+(?:\("[^"]*"\))?\])/g,
+  sql: /(--[^\n]*)|('(?:[^'\\\n]|\\.)*')|(\b\d+\b)|\b(SELECT|FROM|WHERE|INNER|LEFT|JOIN|ON|GROUP|BY|ORDER|AS|UPDATE|SET|DELETE|INSERT|INTO|VALUES|COUNT|SUM|AVG|MIN|MAX|NULL|AND|OR|NOT|IS|IN|LIKE|BETWEEN|TOP|DISTINCT|DESC|ASC|HAVING|CREATE|TABLE|PRIMARY|KEY|REFERENCES|IDENTITY|INT|NVARCHAR)\b()()/gi,
+};
+function highlight(src, lang) {
+  const re = new RegExp(KW[lang] || KW.csharp);
+  let out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    if (!m[0]) { re.lastIndex++; continue; }
+    out += esc(src.slice(last, m.index));
+    const cls = m[1] ? 'c' : m[2] ? 's' : m[3] ? 'n' : m[4] ? 'k' : m[5] ? 't' : 'a';
+    out += `<span class="${cls}">${esc(m[0])}</span>`;
+    last = re.lastIndex;
+  }
+  out += esc(src.slice(last));
+  return out.split('\n').map(l => `<span class="line">${l || ' '}</span>`).join('');
+}
+const codeBlock = (src, lang) => `<pre class="code">${highlight(src, lang)}</pre>`;
+
+/* ---------- state ---------- */
+let state = { meta: { first: '', last: '', group: '' }, answers: {}, order: {}, start: null, finished: null };
+try { const saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); if (saved) state = Object.assign(state, saved); } catch (e) {}
+// ძველი ვერსიის შენახული მდგომარეობა: თუ უკვე პასუხობდა, ტესტი დაწყებულად ითვლება
+if (!state.started) {
+  if (state.finished || Object.keys(state.answers || {}).length) state.started = true;
+  else state.start = null;
+}
+const optCount = q => q.type === 'order' ? q.lines.length : q.type === 'fill' ? 0 : q.options.length;
+for (const q of QUESTIONS) {
+  const n = optCount(q);
+  if (!n) continue;
+  if (!Array.isArray(state.order[q.id]) || state.order[q.id].length !== n) {
+    const p = Array.from({ length: n }, (_, i) => i);
+    for (let i = p.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; }
+    state.order[q.id] = p;
+  }
+}
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
+save();
+
+/* ---------- render exam ---------- */
+function renderExam() {
+  $('#qCount').textContent = QUESTIONS.length;
+  $('#maxPts').textContent = fmtPts(MAX);
+  $('#exam').innerHTML = EXAM.map(sec => `
+    <section class="section">
+      <div class="section-head"><h2><span class="sec-letter">${sec.id}</span>${esc(sec.title)}</h2>
+        <span class="section-pts">${fmtPts(sec.items.length * POINTS)} ქულა</span></div>
+      <p class="section-note">${inline(sec.note)}</p>
+      ${sec.shared ? codeBlock(sec.shared, sec.sharedLang || 'csharp') : ''}
+      ${sec.items.map(q => {
+        if (q.type === 'order' || q.type === 'fill') return renderSpecial(q);
+        const type = q.multi ? 'checkbox' : 'radio';
+        return `<article class="q" id="q-${q.id}">
+          <div class="q-head"><span class="qid">${q.id}</span><span class="qpts">${fmtPts(POINTS)} ქულა</span>
+            ${q.multi ? '<span class="badge">შესაძლოა რამდენიმე სწორი პასუხი</span>' : ''}</div>
+          ${q.text ? `<p class="qtext">${inline(q.text)}</p>` : ''}
+          ${q.code ? codeBlock(q.code, q.lang) : ''}
+          <div class="opts">${state.order[q.id].map((orig, pos) => `
+            <label class="opt ${q.multi ? 'check' : 'radio'}">
+              <input type="${type}" name="${q.id}" value="${orig}">
+              <span class="letter">${LETTERS[pos]}</span><span class="otext">${inline(q.options[orig])}</span>
+            </label>`).join('')}</div>
+        </article>`;
+      }).join('')}
+    </section>`).join('');
+}
+
+const BLANK = ['a', 'b', 'c', 'd', 'e'];
+const plain = s => String(s).replace(/`/g, '');
+function orderList(q) {
+  const arr = state.answers[q.id] || state.order[q.id];
+  const moved = !!state.answers[q.id];
+  return arr.map((i, pos) => `<li class="${moved ? 'moved' : ''}"><pre>${highlight(q.lines[i], q.lang || 'csharp').replace(/<span class="line">|<\/span>$/g, '')}</pre>
+    <span class="mv"><button type="button" data-q="${q.id}" data-pos="${pos}" data-dir="-1" ${pos === 0 ? 'disabled' : ''}>▲</button>
+    <button type="button" data-q="${q.id}" data-pos="${pos}" data-dir="1" ${pos === arr.length - 1 ? 'disabled' : ''}>▼</button></span></li>`).join('');
+}
+function fillCode(q) {
+  const picked = state.answers[q.id] || [];
+  let html = highlight(q.code, q.lang || 'csharp');
+  q.blanks.forEach((opts, b) => {
+    const v = picked[b] ?? -1;
+    const sel = `<select class="blank ${v >= 0 ? 'set' : ''}" data-q="${q.id}" data-b="${b}"><option value="-1">${BLANK[b]} …</option>` +
+      opts.map((o, i) => `<option value="${i}" ${v === i ? 'selected' : ''}>${esc(plain(o))}</option>`).join('') + '</select>';
+    html = html.replace('⟦' + BLANK[b] + '⟧', sel);
+  });
+  return `<pre class="code">${html}</pre>`;
+}
+function renderSpecial(q) {
+  const badge = q.type === 'order' ? '<span class="badge">დაალაგე ▲ ▼ ღილაკებით</span>' : '<span class="badge">აირჩიე თითოეულ ცარიელ ადგილზე</span>';
+  const body = q.type === 'order'
+    ? `${q.code ? codeBlock(q.code, q.lang) : ''}<ol class="ord" id="ord-${q.id}">${orderList(q)}</ol>`
+    : fillCode(q);
+  return `<article class="q" id="q-${q.id}">
+    <div class="q-head"><span class="qid">${q.id}</span><span class="qpts">${fmtPts(POINTS)} ქულა</span>${badge}</div>
+    ${q.text ? `<p class="qtext">${inline(q.text)}</p>` : ''}
+    ${body}
+  </article>`;
+}
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.ord .mv button');
+  if (!btn || state.finished || !state.started) return;
+  const q = QUESTIONS.find(x => x.id === btn.dataset.q);
+  const arr = (state.answers[q.id] || state.order[q.id]).slice();
+  const pos = +btn.dataset.pos, to = pos + +btn.dataset.dir;
+  if (to < 0 || to >= arr.length) return;
+  [arr[pos], arr[to]] = [arr[to], arr[pos]];
+  state.answers[q.id] = arr;
+  $('#ord-' + q.id).innerHTML = orderList(q);
+  updateProgress(); save();
+});
+document.addEventListener('change', e => {
+  const s = e.target;
+  if (!s.matches || !s.matches('select.blank') || state.finished) return;
+  const q = QUESTIONS.find(x => x.id === s.dataset.q);
+  const arr = state.answers[q.id] || q.blanks.map(() => -1);
+  arr[+s.dataset.b] = +s.value;
+  state.answers[q.id] = arr;
+  s.classList.toggle('set', +s.value >= 0);
+  updateProgress(); save();
+});
+
+function restore() {
+  $('#fFirst').value = state.meta.first || '';
+  $('#fLast').value = state.meta.last || '';
+  $('#fGroup').value = state.meta.group || '';
+  $('#stName').textContent = `${state.meta.first || ''} ${state.meta.last || ''}`.trim();
+  $('#stGroup').textContent = state.meta.group || '';
+  for (const [qid, vals] of Object.entries(state.answers))
+    (Array.isArray(vals) ? vals : []).forEach(v => { const i = document.querySelector(`input[name="${qid}"][value="${v}"]`); if (i) i.checked = true; });
+  syncOptionClasses(); updateProgress();
+}
+function syncOptionClasses() {
+  document.querySelectorAll('.opt').forEach(l => l.classList.toggle('checked', l.querySelector('input').checked));
+}
+const answeredCount = () => QUESTIONS.filter(q => {
+  const a = state.answers[q.id] || [];
+  return q.type === 'fill' ? a.some(v => v >= 0) : a.length;
+}).length;
+function updateProgress() {
+  if (state.finished) return;
+  $('#progress').textContent = `${answeredCount()} / ${QUESTIONS.length}`;
+}
+
+document.addEventListener('change', e => {
+  const inp = e.target;
+  if (state.finished || !inp.matches('.opt input')) return;
+  state.answers[inp.name] = [...document.querySelectorAll(`input[name="${inp.name}"]:checked`)].map(i => +i.value);
+  syncOptionClasses(); updateProgress(); save();
+});
+document.addEventListener('input', e => {
+  const map = { fFirst: 'first', fLast: 'last', fGroup: 'group' };
+  const k = map[e.target.id]; if (!k || state.started) return;
+  state.meta[k] = e.target.value; e.target.classList.remove('invalid'); save();
+});
+
+/* ---------- grading ---------- */
+function decodeKey() {
+  const raw = atob(K), sb = new TextEncoder().encode(S), bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) ^ sb[i % sb.length];
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+function grade() {
+  const key = decodeKey();
+  return QUESTIONS.map(q => {
+    const correct = key[q.id].a, picked = state.answers[q.id] || [];
+    let frac;
+    if (q.type === 'order') {
+      const want = correct.map(i => q.lines[i]), got = picked.map(i => q.lines[i]);
+      if (!picked.length) frac = 0;
+      else if (got.join('\n') === want.join('\n')) frac = 1;
+      else {
+        const pairs = new Set(want.slice(1).map((l, i) => want[i] + '\u0000' + l));
+        let hit = 0;
+        for (let i = 1; i < got.length; i++) if (pairs.has(got[i - 1] + '\u0000' + got[i])) hit++;
+        frac = Math.round(hit / (want.length - 1) * 100) / 100 * 0.8;
+      }
+    } else if (q.type === 'fill') {
+      frac = picked.length ? correct.filter((c, b) => picked[b] === c).length / correct.length : 0;
+    } else if (!q.multi) frac = picked.length === 1 && picked[0] === correct[0] ? 1 : 0;
+    else {
+      const hits = picked.filter(p => correct.includes(p)).length, wrong = picked.length - hits;
+      frac = Math.max(0, (hits - wrong) / correct.length);
+    }
+    const empty = q.type === 'fill' ? !picked.some(v => v >= 0) : !picked.length;
+    const status = empty ? 'empty' : frac === 1 ? 'ok' : frac > 0 ? 'partial' : 'wrong';
+    return { id: q.id, sec: q.sec, picked, correct, why: key[q.id].why, pts: POINTS * frac, status };
+  });
+}
+
+/* ---------- results ---------- */
+function reviewSpecial(q, x) {
+  let body;
+  if (q.type === 'order') {
+    const mine = (x.picked.length ? x.picked : state.order[q.id]).map(i => q.lines[i]).join('\n');
+    const right = x.correct.map(i => q.lines[i]).join('\n');
+    body = `<div class="rv-ord"><div><h4>შენი რიგი</h4>${codeBlock(mine, q.lang || 'csharp')}</div><div><h4>სწორი რიგი</h4>${codeBlock(right, q.lang || 'csharp')}</div></div>`;
+  } else {
+    body = codeBlock(q.code.replace(/⟦(\w)⟧/g, '[ $1 ]'), q.lang || 'csharp') + '<ul class="rv-fill">' + q.blanks.map((opts, b) => {
+      const p = x.picked[b] ?? -1, c = x.correct[b];
+      const mine = p >= 0 ? `<code class="inline">${esc(plain(opts[p]))}</code>` : '—';
+      return `<li class="${p === c ? 'ok' : 'bad'}"><b>${BLANK[b]}:</b> შენი პასუხი ${mine} · სწორი <code class="inline">${esc(plain(opts[c]))}</code></li>`;
+    }).join('') + '</ul>';
+  }
+  return `<article class="rv">
+    <div class="q-head"><span class="qid">${q.id}</span><span class="rv-status ${x.status}">${STATUS[x.status]}</span>
+      <span class="qpts">${fmtPts(x.pts)} / ${fmtPts(POINTS)} ქულა</span></div>
+    ${q.text ? `<p class="qtext">${inline(q.text)}</p>` : ''}
+    ${body}
+    <div class="why"><b>რატომ:</b> ${inline(x.why)}</div>
+  </article>`;
+}
+const STATUS = { wrong: 'არასწორი', partial: 'ნაწილობრივ', empty: 'პასუხის გარეშე' };
+function renderResults() {
+  const r = state.finished.results;
+  const total = r.reduce((a, x) => a + x.pts, 0);
+  const pct = Math.round(total / MAX * 100);
+  const okCount = r.filter(x => x.status === 'ok').length;
+  const bySec = EXAM.map(s => {
+    const xs = r.filter(x => x.sec === s.id), got = xs.reduce((a, x) => a + x.pts, 0), max = xs.length * POINTS;
+    return `<tr><td><b>${s.id}</b> · ${esc(s.title)}</td><td style="width:40%"><div class="bar"><i style="width:${Math.round(got / max * 100)}%"></i></div></td>
+      <td>${fmtPts(got)} / ${fmtPts(max)}</td></tr>`;
+  }).join('');
+
+  const bad = r.filter(x => x.status !== 'ok');
+  const qById = Object.fromEntries(QUESTIONS.map(q => [q.id, q]));
+  const review = bad.map(x => {
+    const q = qById[x.id];
+    if (q.type === 'order' || q.type === 'fill') return reviewSpecial(q, x);
+    const items = state.order[q.id].map((orig, pos) => {
+      const isC = x.correct.includes(orig), isP = x.picked.includes(orig);
+      const cls = isC ? 'correct' : isP ? 'picked-wrong' : '';
+      const mk = isC ? '✓' : isP ? '✗' : '';
+      return `<li class="${cls}"><span class="mk">${mk}</span><span><b>${LETTERS[pos]}.</b> ${inline(q.options[orig])}</span>${isP ? '<span class="you">შენი პასუხი</span>' : ''}</li>`;
+    }).join('');
+    return `<article class="rv">
+      <div class="q-head"><span class="qid">${q.id}</span><span class="rv-status ${x.status}">${STATUS[x.status]}</span>
+        <span class="qpts">${fmtPts(x.pts)} / ${fmtPts(POINTS)} ქულა</span></div>
+      ${q.text ? `<p class="qtext">${inline(q.text)}</p>` : ''}
+      ${q.code ? codeBlock(q.code, q.lang) : ''}
+      <ul class="rv-list">${items}</ul>
+      <div class="why"><b>რატომ:</b> ${inline(x.why)}</div>
+    </article>`;
+  }).join('');
+
+  $('#results').innerHTML = `
+    <div class="score-card">
+      <div><div class="score-big">${fmtPts(total)}<small> / ${fmtPts(MAX)}</small></div>
+        <div class="score-sub">${pct}% · სწორი ${okCount} / ${r.length}</div></div>
+      <table class="breakdown">${bySec}</table>
+    </div>
+    <div class="res-actions"><button class="btn" id="pdfAgain" type="button">PDF-ად გადმოწერა</button></div>
+    ${bad.length ? `<section class="section"><div class="section-head"><h2>შეცდომების განხილვა</h2><span class="section-pts">${bad.length} კითხვა</span></div>${review}</section>` : ''}
+    <section class="section"><div class="section-head"><h2>სწორად უპასუხე</h2><span class="section-pts">${okCount} კითხვა</span></div>
+      <div class="ok-chips">${r.filter(x => x.status === 'ok').map(x => `<span>${x.id}</span>`).join('') || '—'}</div></section>`;
+  $('#pdfAgain').addEventListener('click', exportPdf);
+
+  document.body.classList.add('done');
+  document.querySelectorAll('.field input').forEach(i => i.disabled = true);
+  $('#timerLabel').textContent = 'ქულა';
+  $('#timer').textContent = `${fmtPts(total)}/${fmtPts(MAX)}`;
+  $('#timer').classList.remove('over');
+  $('#progLabel').textContent = 'სწორი';
+  $('#progress').textContent = `${okCount} / ${r.length}`;
+  $('#finishTop').textContent = 'PDF-ად გადმოწერა';
+  fillPrintMeta();
+}
+
+/* ---------- finish flow ---------- */
+function validateStudent() {
+  const fields = [['fFirst', 'first'], ['fLast', 'last'], ['fGroup', 'group']];
+  const missing = fields.filter(([, k]) => !(state.meta[k] || '').trim());
+  fields.forEach(([id]) => $('#' + id).classList.remove('invalid'));
+  if (!missing.length) { $('#studentError').textContent = ''; return true; }
+  missing.forEach(([id]) => $('#' + id).classList.add('invalid'));
+  $('#studentError').textContent = 'შეავსე სახელი, გვარი და ჯგუფი.';
+  $('#' + missing[0][0]).focus();
+  return false;
+}
+function askFinish() {
+  if (state.finished) return exportPdf();
+  const left = QUESTIONS.length - answeredCount();
+  $('#modalText').innerHTML = left
+    ? `<b style="color:var(--bad)">${left} კითხვა უპასუხოა.</b> დასრულების შემდეგ პასუხებს ვეღარ შეცვლი.`
+    : 'ყველა კითხვას უპასუხე. დასრულების შემდეგ პასუხებს ვეღარ შეცვლი.';
+  $('#modal').classList.add('on');
+}
+$('#modalNo').addEventListener('click', () => $('#modal').classList.remove('on'));
+$('#modalYes').addEventListener('click', () => {
+  $('#modal').classList.remove('on');
+  state.finished = { at: Date.now(), results: grade() };
+  save();
+  renderResults();
+  window.scrollTo({ top: 0 });
+  setTimeout(exportPdf, 350);
+});
+$('#finishBtn').addEventListener('click', askFinish);
+$('#finishTop').addEventListener('click', askFinish);
+
+/* ---------- PDF ---------- */
+const fmt = d => `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function fillPrintMeta() {
+  const end = state.finished ? new Date(state.finished.at) : new Date();
+  $('#printMeta').innerHTML =
+    `<span>დაწყება: <b>${fmt(new Date(state.start))}</b></span><span>დასრულება: <b>${fmt(end)}</b></span>` +
+    `<span>დახარჯული დრო: <b>${Math.round((end - state.start) / 60000)} წთ</b></span>`;
+}
+let originalTitle = document.title;
+function exportPdf() {
+  fillPrintMeta();
+  originalTitle = document.title;
+  document.title = `SQL_EFCore_V2_${state.meta.last}_${state.meta.first}_${state.meta.group}`.replace(/\s+/g, '_');
+  window.print();
+}
+window.addEventListener('afterprint', () => { document.title = originalTitle; });
+
+/* ---------- კოპირების დაბლოკვა ---------- */
+const isEditable = t => { const n = t && t.nodeType === 3 ? t.parentElement : t; return !!(n && n.closest && n.closest('input')); };
+let toastTimer;
+function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 1800); }
+['copy', 'cut'].forEach(ev => document.addEventListener(ev, e => { if (!isEditable(e.target)) { e.preventDefault(); toast('კოპირება გამორთულია'); } }));
+document.addEventListener('contextmenu', e => { if (!isEditable(e.target)) e.preventDefault(); });
+document.addEventListener('selectstart', e => { if (!isEditable(e.target)) e.preventDefault(); });
+document.addEventListener('dragstart', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  const k = (e.key || '').toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && ['c', 'x', 'a', 's', 'u'].includes(k) && !isEditable(e.target)) { e.preventDefault(); if (k === 'c' || k === 'x') toast('კოპირება გამორთულია'); }
+  if (e.key === 'F12') e.preventDefault();
+});
+
+/* ---------- timer ---------- */
+function tick() {
+  if (state.finished) return;
+  if (!state.started) { $('#timer').textContent = `${pad(DURATION_MIN)}:00`; return; }
+  const left = Math.round((state.start + DURATION_MIN * 60000 - Date.now()) / 1000), el = $('#timer');
+  if (left >= 0) { el.textContent = `${pad(Math.floor(left / 60))}:${pad(left % 60)}`; el.classList.remove('over'); }
+  else { const o = -left; el.textContent = `+${pad(Math.floor(o / 60))}:${pad(o % 60)}`; el.classList.add('over'); }
+}
+setInterval(tick, 1000); tick();
+
+/* ---------- init ---------- */
+/* ---------- საწყისი გვერდი ---------- */
+function renderIntro() {
+  const multi = QUESTIONS.some(q => q.multi);
+  $('#introStats').innerHTML = `<span>⏱ ${DURATION_MIN} წუთი</span><span>${QUESTIONS.length} კითხვა</span><span>${fmtPts(MAX)} ქულა</span><span>თითო კითხვა ${fmtPts(POINTS)} ქულა</span>`;
+  const rules = [
+    `ტესტში <b>${QUESTIONS.length} კითხვაა</b>, სულ <b>${fmtPts(MAX)} ქულა</b>. დრო: <b>${DURATION_MIN} წუთი</b>. ტაიმერი „დაწყებას“ დაჭერისთანავე ირთვება და გვერდის განახლებისას არ ჩერდება.`,
+    `კითხვების უმეტესობას <b>4 სავარაუდო პასუხი</b> აქვს და სწორი ერთია.`,
+    'კოდს არ წერ — <b>აწყობ</b>: „დაალაგე“ კითხვებში ხაზებს ▲ ▼ ღილაკებით სწორ რიგში დგამ (სრულად სწორი — სრული ქულა, ნაწილობრივ სწორ რიგს — ნაწილი); „შეავსე“ კითხვებში თითოეულ ცარიელ ადგილზე სიიდან ირჩევ (ყოველი სწორი ადგილი — ქულის ნაწილი).',
+    multi ? 'სადაც წერია <b>„შესაძლოა რამდენიმე სწორი პასუხი“</b>, მონიშნე ყველა სწორი. ყოველი სწორი მონიშვნა ქულას მატებს, ყოველი არასწორი აკლებს (მინიმუმ 0).' : null,
+    'პასუხებისა და ასაწყობი ხაზების თანმიმდევრობა ყველასთვის განსხვავებულია: „ბ“ შენთან და მეზობელთან სხვადასხვა პასუხია.',
+    'ტექსტის კოპირება, მონიშვნა და მარჯვენა ღილაკი გამორთულია.',
+    'პასუხები ავტომატურად ინახება ამ ბრაუზერში. გვერდის განახლება უსაფრთხოა, მაგრამ <b>ბრაუზერის მონაცემები არ წაშალო</b> და ტესტი სხვა ბრაუზერში არ გახსნა.',
+    'დაწყების შემდეგ სახელს, გვარს და ჯგუფს ვეღარ შეცვლი.',
+    'დრო რომ ამოიწურება, ტესტი არ დაიკეტება, მაგრამ გადაცილება წითლად აითვლება და PDF-ში ჩაიწერება.',
+    'ბოლოს დააჭირე <b>„დასრულება“</b>. ამის შემდეგ პასუხებს ვეღარ შეცვლი. გამოჩნდება შენი ქულა და შეცდომების ახსნა.',
+    'დასრულებისას PDF ავტომატურად გაიხსნება: აირჩიე <b>Save as PDF</b>, შეინახე და ფაილი ატვირთე.',
+  ].filter(Boolean);
+  $('#introRules').innerHTML = rules.map(r => `<li>${r}</li>`).join('');
+}
+function setMode() {
+  document.body.classList.toggle('intro', !state.started && !state.finished);
+}
+$('#agree').addEventListener('change', () => $('#agreeBox').classList.remove('invalid'));
+$('#startBtn').addEventListener('click', () => {
+  if (!validateStudent()) return;
+  if (!$('#agree').checked) {
+    $('#agreeBox').classList.add('invalid');
+    $('#studentError').textContent = 'დაადასტურე, რომ წესები წაიკითხე.';
+    return;
+  }
+  state.meta.first = state.meta.first.trim(); state.meta.last = state.meta.last.trim(); state.meta.group = state.meta.group.trim();
+  state.started = true;
+  state.start = Date.now();
+  save();
+  restore();
+  setMode();
+  window.scrollTo({ top: 0 });
+  tick();
+});
+
+renderIntro();
+renderExam();
+restore();
+setMode();
+if (state.finished) renderResults();
+</script>
+</body>
+</html>

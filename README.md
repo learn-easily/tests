@@ -12,7 +12,7 @@ courses/
   <კურსი>/course.json           {"title", "order"}: ერთი კურსი = ერთი ჩანართი
   <კურსი>/<NN-slug>/
     test.html                   ტესტი (ერთი თვითკმარი HTML)
-    test.json                   {"title", "topics", "duration", "questions", "points"}
+    test.json                   {"title", "badge"?, "topics", "duration", "questions", "points"}
 build.py                        აწყობს index.html-ს და <კურსი>/<ტესტი>/ საქაღალდეებს root-ში
 ```
 
@@ -23,6 +23,10 @@ build.py                        აწყობს index.html-ს და <კუ
 1. შექმენი `courses/<კურსი>/<NN-slug>/test.html` და `test.json`.
 2. ახალი კურსისთვის დაამატე `courses/<კურსი>/course.json`.
 3. გაუშვი `python3 build.py`, შემდეგ commit და push `main`-ზე.
+
+## Badge
+
+`test.json`-ში არასავალდებულო `"badge"` (მაგ. `"შუალედური"`) ქარდზე ტესტის ნომრის გვერდით ჩანს და ძებნაშიც მოიძებნება.
 
 ## კითხვის ტიპები
 
