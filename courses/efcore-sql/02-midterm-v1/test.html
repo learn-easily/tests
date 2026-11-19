@@ -349,15 +349,21 @@ function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); 
 const perm = n => { const p = Array.from({ length: n }, (_, i) => i); for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; } return p; };
 if (!state.qorder) state.qorder = {};
 if (!state.border) state.border = {};
+// a question marked "follows" (it refers to the previous one) always moves together with it
+const BLOCKS = Object.fromEntries(EXAM.map(s => {
+  const b = [];
+  s.items.forEach(q => (q.follows && b.length ? b[b.length - 1].push(q) : b.push([q])));
+  return [s.id, b];
+}));
 for (const s of EXAM) {
   const o = state.qorder[s.id];
-  if (!Array.isArray(o) || o.length !== s.items.length) state.qorder[s.id] = perm(s.items.length);
+  if (!Array.isArray(o) || o.length !== BLOCKS[s.id].length) state.qorder[s.id] = perm(BLOCKS[s.id].length);
   for (const q of s.items) if (q.type === 'fill') {
     const b = state.border[q.id];
     if (!Array.isArray(b) || b.length !== q.blanks.length) state.border[q.id] = q.blanks.map(x => perm(x.length));
   }
 }
-const ORDERED = Object.fromEntries(EXAM.map(s => [s.id, state.qorder[s.id].map(i => s.items[i])]));
+const ORDERED = Object.fromEntries(EXAM.map(s => [s.id, state.qorder[s.id].flatMap(i => BLOCKS[s.id][i])]));
 const NUM = {};
 EXAM.forEach(s => ORDERED[s.id].forEach(q => { NUM[q.id] = Object.keys(NUM).length + 1; }));
 save();
@@ -620,7 +626,7 @@ function renderIntro() {
   const rules = [
     `ტესტში <b>${QUESTIONS.length} კითხვაა</b>, სულ <b>${fmtPts(MAX)} ქულა</b>. დრო: <b>${DURATION_MIN} წუთი</b>. ტაიმერი „დაწყებას“ დაჭერისთანავე ირთვება და გვერდის განახლებისას არ ჩერდება.`,
     `კითხვების უმეტესობას <b>4 სავარაუდო პასუხი</b> აქვს და სწორი ერთია.`,
-    'კოდს არ წერ — <b>აწყობ</b>: „დაალაგე“ კითხვებში ხაზებს ▲ ▼ ღილაკებით სწორ რიგში დგამ (სრულად სწორი — სრული ქულა, ნაწილობრივ სწორ რიგს — ნაწილი); „შეავსე“ კითხვებში თითოეულ ცარიელ ადგილზე სიიდან ირჩევ (ყოველი სწორი ადგილი — ქულის ნაწილი).',
+    QUESTIONS.some(q => q.type === 'order' || q.type === 'fill') && 'კოდს არ წერ — <b>აწყობ</b>: „დაალაგე“ კითხვებში ხაზებს ▲ ▼ ღილაკებით სწორ რიგში დგამ (სრულად სწორი — სრული ქულა, ნაწილობრივ სწორ რიგს — ნაწილი); „შეავსე“ კითხვებში თითოეულ ცარიელ ადგილზე სიიდან ირჩევ (ყოველი სწორი ადგილი — ქულის ნაწილი).',
     multi ? 'სადაც წერია <b>„შესაძლოა რამდენიმე სწორი პასუხი“</b>, მონიშნე ყველა სწორი. ყოველი სწორი მონიშვნა ქულას მატებს, ყოველი არასწორი აკლებს (მინიმუმ 0).' : null,
     'კითხვების, პასუხებისა და ასაწყობი ხაზების თანმიმდევრობა ყველასთვის განსხვავებულია: მე-5 კითხვა და „ბ“ პასუხი შენთან და მეზობელთან სხვადასხვაა.',
     'ტექსტის კოპირება, მონიშვნა და მარჯვენა ღილაკი გამორთულია.',
