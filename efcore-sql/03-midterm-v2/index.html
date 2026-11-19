@@ -113,7 +113,13 @@
   /* ---------- results ---------- */
   #results { display: none; }
   body.done #results { display: block; }
-  body.done #exam, body.done .finish, body.done .rules { display: none; }
+  body.done .finish, body.done .rules { display: none; }
+  body.done #exam { display: block; }
+  body.done .ord li .mv { display: none; }
+  body.done .opt { cursor: default; } body.done .opt:not(.checked):hover { border-color: var(--line); }
+  body.done pre.code select.blank:disabled { opacity: 1; color: var(--ink); }
+  .score-card { grid-template-columns: auto 1fr; } .score-big { white-space: nowrap; }
+  .score-note { margin: 0; color: var(--muted); font-size: 15px; }
   .score-card { margin-top: 28px; display: grid; grid-template-columns: 220px 1fr; gap: 28px; align-items: center;
     border: 1.5px solid var(--ink); border-radius: 10px; padding: 24px 28px; }
   .score-big { font-family: var(--mono); font-weight: 700; font-size: 52px; line-height: 1; }
@@ -482,79 +488,26 @@ function grade() {
 }
 
 /* ---------- results ---------- */
-function reviewSpecial(q, x) {
-  let body;
-  if (q.type === 'order') {
-    const mine = (x.picked.length ? x.picked : state.order[q.id]).map(i => q.lines[i]).join('\n');
-    const right = x.correct.map(i => q.lines[i]).join('\n');
-    body = `<div class="rv-ord"><div><h4>შენი რიგი</h4>${codeBlock(mine, q.lang || 'csharp')}</div><div><h4>სწორი რიგი</h4>${codeBlock(right, q.lang || 'csharp')}</div></div>`;
-  } else {
-    body = codeBlock(q.code.replace(/⟦(\w)⟧/g, '[ $1 ]'), q.lang || 'csharp') + '<ul class="rv-fill">' + q.blanks.map((opts, b) => {
-      const p = x.picked[b] ?? -1, c = x.correct[b];
-      const mine = p >= 0 ? `<code class="inline">${esc(plain(opts[p]))}</code>` : '—';
-      return `<li class="${p === c ? 'ok' : 'bad'}"><b>${BLANK[b]}:</b> შენი პასუხი ${mine} · სწორი <code class="inline">${esc(plain(opts[c]))}</code></li>`;
-    }).join('') + '</ul>';
-  }
-  return `<article class="rv">
-    <div class="q-head"><span class="qid">${q.id}</span><span class="rv-status ${x.status}">${STATUS[x.status]}</span>
-      <span class="qpts">${fmtPts(x.pts)} / ${fmtPts(POINTS)} ქულა</span></div>
-    ${q.text ? `<p class="qtext">${inline(q.text)}</p>` : ''}
-    ${body}
-    <div class="why"><b>რატომ:</b> ${inline(x.why)}</div>
-  </article>`;
-}
-const STATUS = { wrong: 'არასწორი', partial: 'ნაწილობრივ', empty: 'პასუხის გარეშე' };
 function renderResults() {
-  const r = state.finished.results;
-  const total = r.reduce((a, x) => a + x.pts, 0);
+  const f = state.finished;
+  const total = f.total ?? (f.results || []).reduce((a, x) => a + x.pts, 0);
   const pct = Math.round(total / MAX * 100);
-  const okCount = r.filter(x => x.status === 'ok').length;
-  const bySec = EXAM.map(s => {
-    const xs = r.filter(x => x.sec === s.id), got = xs.reduce((a, x) => a + x.pts, 0), max = xs.length * POINTS;
-    return `<tr><td><b>${s.id}</b> · ${esc(s.title)}</td><td style="width:40%"><div class="bar"><i style="width:${Math.round(got / max * 100)}%"></i></div></td>
-      <td>${fmtPts(got)} / ${fmtPts(max)}</td></tr>`;
-  }).join('');
-
-  const bad = r.filter(x => x.status !== 'ok');
-  const qById = Object.fromEntries(QUESTIONS.map(q => [q.id, q]));
-  const review = bad.map(x => {
-    const q = qById[x.id];
-    if (q.type === 'order' || q.type === 'fill') return reviewSpecial(q, x);
-    const items = state.order[q.id].map((orig, pos) => {
-      const isC = x.correct.includes(orig), isP = x.picked.includes(orig);
-      const cls = isC ? 'correct' : isP ? 'picked-wrong' : '';
-      const mk = isC ? '✓' : isP ? '✗' : '';
-      return `<li class="${cls}"><span class="mk">${mk}</span><span><b>${LETTERS[pos]}.</b> ${inline(q.options[orig])}</span>${isP ? '<span class="you">შენი პასუხი</span>' : ''}</li>`;
-    }).join('');
-    return `<article class="rv">
-      <div class="q-head"><span class="qid">${q.id}</span><span class="rv-status ${x.status}">${STATUS[x.status]}</span>
-        <span class="qpts">${fmtPts(x.pts)} / ${fmtPts(POINTS)} ქულა</span></div>
-      ${q.text ? `<p class="qtext">${inline(q.text)}</p>` : ''}
-      ${q.code ? codeBlock(q.code, q.lang) : ''}
-      <ul class="rv-list">${items}</ul>
-      <div class="why"><b>რატომ:</b> ${inline(x.why)}</div>
-    </article>`;
-  }).join('');
-
   $('#results').innerHTML = `
     <div class="score-card">
       <div><div class="score-big">${fmtPts(total)}<small> / ${fmtPts(MAX)}</small></div>
-        <div class="score-sub">${pct}% · სწორი ${okCount} / ${r.length}</div></div>
-      <table class="breakdown">${bySec}</table>
+        <div class="score-sub">${pct}%</div></div>
+      <p class="score-note">ტესტი დასრულებულია. ქვემოთ შენი მონიშნული პასუხებია — მათი შეცვლა აღარ შეიძლება.</p>
     </div>
-    <div class="res-actions"><button class="btn" id="pdfAgain" type="button">PDF-ად გადმოწერა</button></div>
-    ${bad.length ? `<section class="section"><div class="section-head"><h2>შეცდომების განხილვა</h2><span class="section-pts">${bad.length} კითხვა</span></div>${review}</section>` : ''}
-    <section class="section"><div class="section-head"><h2>სწორად უპასუხე</h2><span class="section-pts">${okCount} კითხვა</span></div>
-      <div class="ok-chips">${r.filter(x => x.status === 'ok').map(x => `<span>${x.id}</span>`).join('') || '—'}</div></section>`;
+    <div class="res-actions"><button class="btn" id="pdfAgain" type="button">PDF-ად გადმოწერა</button></div>`;
   $('#pdfAgain').addEventListener('click', exportPdf);
 
   document.body.classList.add('done');
-  document.querySelectorAll('.field input').forEach(i => i.disabled = true);
+  document.querySelectorAll('.field input, #exam input, #exam select, #exam .mv button').forEach(i => i.disabled = true);
   $('#timerLabel').textContent = 'ქულა';
   $('#timer').textContent = `${fmtPts(total)}/${fmtPts(MAX)}`;
   $('#timer').classList.remove('over');
-  $('#progLabel').textContent = 'სწორი';
-  $('#progress').textContent = `${okCount} / ${r.length}`;
+  $('#progLabel').textContent = 'პასუხი';
+  $('#progress').textContent = `${answeredCount()} / ${QUESTIONS.length}`;
   $('#finishTop').textContent = 'PDF-ად გადმოწერა';
   fillPrintMeta();
 }
@@ -581,7 +534,7 @@ function askFinish() {
 $('#modalNo').addEventListener('click', () => $('#modal').classList.remove('on'));
 $('#modalYes').addEventListener('click', () => {
   $('#modal').classList.remove('on');
-  state.finished = { at: Date.now(), results: grade() };
+  state.finished = { at: Date.now(), total: grade().reduce((a, x) => a + x.pts, 0) };
   save();
   renderResults();
   window.scrollTo({ top: 0 });
@@ -646,7 +599,7 @@ function renderIntro() {
     'პასუხები ავტომატურად ინახება ამ ბრაუზერში. გვერდის განახლება უსაფრთხოა, მაგრამ <b>ბრაუზერის მონაცემები არ წაშალო</b> და ტესტი სხვა ბრაუზერში არ გახსნა.',
     'დაწყების შემდეგ სახელს, გვარს და ჯგუფს ვეღარ შეცვლი.',
     'დრო რომ ამოიწურება, ტესტი არ დაიკეტება, მაგრამ გადაცილება წითლად აითვლება და PDF-ში ჩაიწერება.',
-    'ბოლოს დააჭირე <b>„დასრულება“</b>. ამის შემდეგ პასუხებს ვეღარ შეცვლი. გამოჩნდება შენი ქულა და შეცდომების ახსნა.',
+    'ბოლოს დააჭირე <b>„დასრულება“</b>. ამის შემდეგ პასუხებს ვეღარ შეცვლი. გამოჩნდება შენი ქულა და შენი მონიშნული პასუხები.',
     'დასრულებისას PDF ავტომატურად გაიხსნება: აირჩიე <b>Save as PDF</b>, შეინახე და ფაილი ატვირთე.',
   ].filter(Boolean);
   $('#introRules').innerHTML = rules.map(r => `<li>${r}</li>`).join('');
